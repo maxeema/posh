@@ -10,7 +10,7 @@
         android:supportsRtl="true"
         android:theme="@android:style/Theme.Translucent.NoTitleBar.Fullscreen">
         <activity android:name=".A"
-                android:label="@string/app_name"
+                android:label="@string/sell"
                 android:excludeFromRecents="true" android:noHistory="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

@@ -1,39 +1,45 @@
 apply plugin: 'com.android.application'
-apply plugin: 'kotlin-android-extensions'
+//apply plugin: 'kotlin-android-extensions'
 apply plugin: 'kotlin-android'
 
 android {
     compileSdkVersion 29
     defaultConfig {
-        applicationId "maxeem.poshmark"
-        minSdkVersion 21
+        applicationId "maxeem.america"
+        minSdkVersion 26
         targetSdkVersion 29
-        versionCode 12
-        versionName "1.2 - Maxeem"
+        versionCode 10
+        versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
     buildTypes {
         release {
-            minifyEnabled false
+            minifyEnabled true
+            shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            applicationIdSuffix = 'poshapp'
+            versionNameSuffix = '-Maxeem'
         }
         debug {
             applicationIdSuffix = 'debug'
             versionNameSuffix = '-debug'
         }
     }
-    compileOptions {
-    }
+    compileOptions { }
     buildToolsVersion = '29.0.0 rc3'
 }
 
 dependencies {
-    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
     testImplementation 'junit:junit:4.13-beta-3'
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
-//    implementation "com.google.android.material:material:${material_version}"
+    implementation "com.google.android.material:material:${material_version}"
+    implementation 'androidx.core:core-ktx:1.0.1'
+//implementation 'androidx.tonyodev.fetch2rx:xfetch2rx:3.1.1'
+//implementation 'net.minidev:json-smart:2.3'
+//implementation 'com.jayway.jsonpath:json-path:2.4.0'
 }
 
 repositories {

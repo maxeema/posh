@@ -9,68 +9,60 @@ import net.minidev.json.*
 import net.minidev.json.parser.JSONParser
 import java.io.File
 import java.net.URL
+import java.nio.charset.Charset
 
-private val url = URL("https://poshmark.com/api/meta/experiences")
-private val file = File("app.kts.data/experiences.json")
+object Experiences {
+    val url = URL("https://poshmark.com/api/meta/experiences")
+    val file = File("app.kts.data/experiences.json")
+}
+object Markets {
+    val file = File("src/main/res/raw/markets.json")
+}
 
 println("- start")
 //
-class Market(val id: String, val action: String, val label: String, val icon: String) {
-    private var depts : MutableList<Market>? = null
-    private var isDept = false
-    companion object {
-        fun from(j: JSONObject) = with (j) {
-            val id = getAsString("short_name");
-            Market("market_$id", id, getAsString("short_display_name"), getAsString("img_url_large"))
-        }
-    }
-    fun addDept(d: Market) = run {
-        d.isDept = true
-        if (depts == null) depts = mutableListOf()
-        depts!!.add(d)
-    }
-    override fun toString() = if (isDept) "$id" else "$id - $action - $label - $icon - ${depts}"
-}
 kotlin.run {
-    println("$file -> isFile: ${file.isFile} - length: ${file.length()}")
-    val markets = mutableListOf<Market>()
-    (file.takeIf { it.length() > 1 } ?: wget(url, file)).inputStream()
+    println("${Experiences.file} -> isFile: ${Experiences.file.isFile} - length: ${Experiences.file.length()}")
+    (Experiences.file.takeIf { it.length() > 1 } ?: wget(Experiences.url, Experiences.file)).inputStream()
         .use { input -> JSONParser(JSONParser.MODE_PERMISSIVE).parse(input) }
     .also { j ->
         val jdmap = mutableMapOf<String, JSONObject>().apply {
             JsonPath.compile("data.[?(@.short_name)]").read<List<JSONObject>>(j)
                 .forEach { put(it.getAsString("short_name"), it) }
         }
+        val jout = JSONObject().apply {
+            appendField("markets", JSONArray())
+            appendField("date", JsonPath.compile("experiences.updated_at").read(j))
+        }
         JsonPath.compile("$.presentation.groups").read<Collection<JSONObject>>(j).stream().skip(1).forEach { jp ->
             var id = jp.getAsString("id")
             if (id == "home") //Home market has the 'home_a' alias now
                 id = "home_a"
             println("market id: " + id)
-            markets.add(Market.from(jdmap.get(id)!!).apply {
+            jdmap.get(id)!!.also { jd-> JSONObject().also { jm ->
+                (jout.get("markets") as JSONArray).appendElement(jm.appendField("id", id).appendField("label", jd.getAsString("short_display_name")))
+//TODO download Market icon
                 JsonPath.compile("content.data.*.id").read<Collection<String>>(jp).forEach { dId: String ->
                     if (id == dId) return@forEach //skip the same market and department like "women" contains "women"
                     if (dId == "wholesale") return@forEach//Wholesale dept. isn't accessible by default for all users and I can't even try/open it
                     println(" dept: " + dId)
-                    addDept(Market.from(jdmap.get(dId)!!))
+                    jm.run { get("departments") as JSONArray? ?: JSONArray().also { put("departments", it)} }
+                            .appendElement(JSONObject().appendField(dId, jdmap.get(dId)!!.getAsString("short_display_name")))
+//TODO download Market's department icon
                 }
-            })
+            }}
         }
+        println("jout: " + jout)
+        //write
+        Markets.file.writer(Charset.forName("UTF-8")).use { fw-> jout.writeJSONString(fw) }
     }
-    //process the markets and their departments
-    markets.forEach { m ->
-        println()
-        println("[market] $m")
-    }
-    //generate markets json
-
-    //and download icons
 
 }
 fun wget(url: URL, file: File) = url.openStream().buffered().use { bin -> file.outputStream().use { fout ->
     println(" wget - $url -> $file")
     ByteArray(8096).apply {
-        do {
-            val r = bin.read(this, 0, this.size)
+        var r: Int; do {
+            r = bin.read(this, 0, this.size)
             if (r > 0) fout.write(this, 0, r)
         } while (r > 0)
     }

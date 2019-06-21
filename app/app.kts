@@ -1,8 +1,7 @@
 //
 //
-//https://www.baeldung.com/guide-to-jayway-jsonpath
-//cd app.kts.data
-// kotlinc -cp json-path-2.4.0.jar:json-smart-2.3.jar:slf4j-api-1.7.25.jar -script ../app.kts
+//JSONPath docs - https://www.baeldung.com/guide-to-jayway-jsonpath
+//Usage - kotlinc -cp app.kts.data/slf4j-api-1.7.25.jar:app.kts.data/json-smart-2.3.jar:app.kts.data/json-path-2.4.0.jar -script app.kts
 //
 //
 import com.jayway.jsonpath.JsonPath
@@ -12,66 +11,71 @@ import java.io.File
 import java.net.URL
 
 private val url = URL("https://poshmark.com/api/meta/experiences")
-private val file = File("experiences.json")
+private val file = File("app.kts.data/experiences.json")
 
 println("- start")
 //
 class Market(val id: String, val action: String, val label: String, val icon: String) {
+    private var depts : MutableList<Market>? = null
     private var isDept = false
     companion object {
         fun from(j: JSONObject) = with (j) {
             val id = getAsString("short_name");
-            return@with Market("market_$id", id, getAsString("short_display_name"), getAsString("img_url_large"))
+            Market("market_$id", id, getAsString("short_display_name"), getAsString("img_url_large"))
         }
     }
-    override fun toString(): String {
-        return if (isDept) "$id" else "$id - $action - $label - $icon - ${depts}"
+    fun addDept(d: Market) = run {
+        d.isDept = true
+        if (depts == null) depts = mutableListOf()
+        depts!!.add(d)
     }
-    private var depts : MutableList<Market>? = null
-    fun addDept(dept: Market) {
-        dept.isDept = true
-        if (depts != null) depts!!.add(dept)
-        else depts = mutableListOf(dept)
-    }
+    override fun toString() = if (isDept) "$id" else "$id - $action - $label - $icon - ${depts}"
 }
 kotlin.run {
     println("$file -> isFile: ${file.isFile} - length: ${file.length()}")
-    val j = (file.takeIf { it.length() > 1 } ?: wget(url, file)).run {
-        inputStream().use { JSONParser(JSONParser.MODE_PERMISSIVE).parse(it) }
-    }
     val markets = mutableListOf<Market>()
-    JsonPath.compile("$.presentation.groups").read<JSONArray>(j).stream().skip(1).forEach { (it as JSONObject).also {
-        var id = it.getAsString("id")
-        if (id == "home") //Home market has 'home_a' alias
-            id = "home_a"
-        println("id: " +id)
-        with (JsonPath.compile("data.[?(@.short_name == '$id')]").read<JSONArray>(j).get(0) as JSONObject) {
-            markets.add(Market.from(this).apply {
-                JsonPath.compile("content.data.*.id").read<JSONArray>(it).forEach { with (it as String) {
-                    if (it == id) return@with //skip the same dept as market like "women" and "women"
-                    if (it == "wholesale") return@with //Wholesale isn't accessible for all users by default and I can't even try/open it
-                    println(" child: " + it)
-                    with(JsonPath.compile("data.[?(@.short_name == '$it')]").read<JSONArray>(j).get(0) as JSONObject) {
-                        addDept(Market.from(this))
-                    }
+    (file.takeIf { it.length() > 1 } ?: wget(url, file)).inputStream()
+        .use { input -> JSONParser(JSONParser.MODE_PERMISSIVE).parse(input) }
+    .also { j ->
+        val jdmap = mutableMapOf<String, JSONObject>().apply {
+            JsonPath.compile("data.[?(@.short_name)]").read<List<JSONObject>>(j)
+                .forEach { put(it.getAsString("short_name"), it) }
+        }
+        JsonPath.compile("$.presentation.groups").read<Collection<JSONObject>>(j).stream().skip(1).forEach { jp ->
+            var id = jp.getAsString("id")
+            if (id == "home") //Home market has the 'home_a' alias now
+                id = "home_a"
+            println("market id: " + id)
+            markets.add(Market.from(jdmap.get(id)!!).apply {
+                JsonPath.compile("content.data.*.id").read<Collection<String>>(jp).forEach { dId: String ->
+                    if (id == dId) return@forEach //skip the same market and department like "women" contains "women"
+                    if (dId == "wholesale") return@forEach//Wholesale dept. isn't accessible by default for all users and I can't even try/open it
+                    println(" dept: " + dId)
+                    addDept(Market.from(jdmap.get(dId)!!))
                 }
-            }})
+            })
         }
-    }}
-    println("markets: $markets")
+    }
+    //process the markets and their departments
+    markets.forEach { m ->
+        println()
+        println("[market] $m")
+    }
+    //generate markets json
+
+    //and download icons
+
 }
-fun wget(url: URL, file: File) = url.openStream().buffered().use {
+fun wget(url: URL, file: File) = url.openStream().buffered().use { bin -> file.outputStream().use { fout ->
     println(" wget - $url -> $file")
-    val bin = it; file.outputStream().use {
-        ByteArray(8096).apply {
-            do {
-                val r = bin.read(this, 0, this.size)
-                if (r > 0) it.write(this, 0, r)
-            } while (r > 0)
-        }
+    ByteArray(8096).apply {
+        do {
+            val r = bin.read(this, 0, this.size)
+            if (r > 0) fout.write(this, 0, r)
+        } while (r > 0)
     }
     file
-}
+}}
 //
 println("- end")
 //

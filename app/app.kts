@@ -27,38 +27,43 @@ kotlin.run {
         .use { input -> JSONParser(JSONParser.MODE_PERMISSIVE).parse(input) }
     .also { j ->
         val jdmap = mutableMapOf<String, JSONObject>().apply {
-            JsonPath.compile("data.[?(@.short_name)]").read<List<JSONObject>>(j)
+            JsonPath.compile("data.*").read<List<JSONObject>>(j)
                 .forEach { put(it.getAsString("short_name"), it) }
         }
         val jout = JSONObject().apply {
             appendField("markets", JSONArray())
             appendField("date", JsonPath.compile("experiences.updated_at").read(j))
         }
-        JsonPath.compile("$.presentation.groups").read<Collection<JSONObject>>(j).stream().skip(1).forEach { jp ->
+        JsonPath.compile("presentation.groups").read<Collection<JSONObject>>(j).stream().skip(1).forEach { jp ->
             var id = jp.getAsString("id")
             if (id == "home") //Home market has the 'home_a' alias now
                 id = "home_a"
             println("market id: " + id)
-            jdmap.get(id)!!.also { jd-> JSONObject().also { jm ->
-                (jout.get("markets") as JSONArray).appendElement(jm.appendField("id", id).appendField("label", jd.getAsString("short_display_name")))
-//TODO download Market icon
+            jdmap.get(id)!!.also { jdm-> JSONObject().also { jm ->
+                jout.get("markets").let{ it as JSONArray }.appendElement(jm.appendField("id", id).appendField("label", jdm.getAsString("short_display_name")))
+                File("src/main/res/mipmap-xxxhdpi", "market_$id.png").takeUnless { it.length() > 1}?.run {
+                    wget(URL(jdm.getAsString("img_url_large")), this) }
                 JsonPath.compile("content.data.*.id").read<Collection<String>>(jp).forEach { dId: String ->
                     if (id == dId) return@forEach //skip the same market and department like "women" contains "women"
                     if (dId == "wholesale") return@forEach//Wholesale dept. isn't accessible by default for all users and I can't even try/open it
                     println(" dept: " + dId)
-                    jm.run { get("departments") as JSONArray? ?: JSONArray().also { put("departments", it)} }
-                            .appendElement(JSONObject().appendField(dId, jdmap.get(dId)!!.getAsString("short_display_name")))
-//TODO download Market's department icon
+                    jdmap.get(dId)!!.also { jdd ->
+                        jm.run { get("departments") as JSONArray? ?: JSONArray().also { put("departments", it)} }
+                            .appendElement(JSONObject().appendField(dId, jdd.getAsString("short_display_name")))
+                        File("src/main/res/mipmap-xxxhdpi", "department_$dId.png").takeUnless { it.length() > 1 }?.run {
+                            wget(URL(jdd.getAsString("img_url_large")), this) }
+                    }
                 }
             }}
         }
         println("jout: " + jout)
-        //write
         Markets.file.writer(Charset.forName("UTF-8")).use { fw-> jout.writeJSONString(fw) }
+//        println(JsonPath.compile("markets[0].departments").read<JSONArray>(jout).get(0).let {it as JSONObject}.entries.first())
     }
 
 }
-fun wget(url: URL, file: File) = url.openStream().buffered().use { bin -> file.outputStream().use { fout ->
+fun wget(url: URL, file: File) = url.openStream().buffered().use { bin ->
+        file.outputStream().use { fout ->
     println(" wget - $url -> $file")
     ByteArray(8096).apply {
         var r: Int; do {

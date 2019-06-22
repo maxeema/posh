@@ -16,7 +16,8 @@ object Experiences {
     val file = File("app.kts.data/experiences.json")
 }
 object Markets {
-    val file = File("src/main/res/raw/markets.json")
+    const val jsonFile = "src/main/res/raw/markets.json"
+    const val iconsPath = "src/main/res/mipmap-xxxhdpi"
 }
 
 println("- start")
@@ -41,7 +42,7 @@ kotlin.run {
             println("market id: " + id)
             jdmap.get(id)!!.also { jdm-> JSONObject().also { jm ->
                 jout.get("markets").let{ it as JSONArray }.appendElement(jm.appendField("id", id).appendField("label", jdm.getAsString("short_display_name")))
-                File("src/main/res/mipmap-xxxhdpi", "market_$id.png").takeUnless { it.length() > 1}?.run {
+                Markets.iconsPath.let{File(it, "market_$id.png")}.takeUnless { it.length() > 1}?.run {
                     wget(URL(jdm.getAsString("img_url_large")), this) }
                 JsonPath.compile("content.data.*.id").read<Collection<String>>(jp).forEach { dId: String ->
                     if (id == dId) return@forEach //skip the same market and department like "women" contains "women"
@@ -50,14 +51,14 @@ kotlin.run {
                     jdmap.get(dId)!!.also { jdd ->
                         jm.run { get("departments") as JSONArray? ?: JSONArray().also { put("departments", it)} }
                             .appendElement(JSONObject().appendField(dId, jdd.getAsString("short_display_name")))
-                        File("src/main/res/mipmap-xxxhdpi", "department_$dId.png").takeUnless { it.length() > 1 }?.run {
+                        Markets.iconsPath.let{File(it, "department_$dId.png")}.takeUnless { it.length() > 1 }?.run {
                             wget(URL(jdd.getAsString("img_url_large")), this) }
                     }
                 }
             }}
         }
         println("jout: " + jout)
-        Markets.file.writer(Charset.forName("UTF-8")).use { fw-> jout.writeJSONString(fw) }
+        Markets.jsonFile.let{File(it)}.writer(Charset.forName("UTF-8")).use { jout.writeJSONString(it) }
 //        println(JsonPath.compile("markets[0].departments").read<JSONArray>(jout).get(0).let {it as JSONObject}.entries.first())
     }
 

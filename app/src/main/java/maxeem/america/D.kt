@@ -2,6 +2,7 @@ package maxeem.america
 
 import android.graphics.drawable.Icon
 import androidx.annotation.DrawableRes
+import org.json.JSONObject
 
 object D { //Data
 
@@ -20,5 +21,13 @@ object D { //Data
         Item("tab_news", "news", "News", R.drawable.tab_news),
         Item("tab_account", "account", "Me", R.drawable.tab_me)
     )
+
+    val markets = mutableListOf<Item>().apply {
+        App.instance.resources.openRawResource(R.raw.markets).bufferedReader().use {
+            JSONObject(it.readText())
+        }.apply {
+            U.log("markets j: " + this)
+        }
+    }
 
 }

@@ -4,6 +4,6 @@
     <string name="install_first">"Install the <b>Poshmark</b> app first</string>
     <string name="shortcuts">Shortcuts</string>
     <string name="tap" formatted="true">Long-tap to create a Shortcut</string>
-    <string name="click">Click to open</string>
+    <string name="click">Click item to open app</string>
     <string name="cant_pin">Sorry, your device conf. isn\'t supported</string>
 </resources>

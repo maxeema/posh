@@ -49,6 +49,7 @@ kotlin.run {
                 JsonPath.compile("content.data.*.id").read<Collection<String>>(jp).forEach { dId: String ->
                     if (id == dId) return@forEach //skip the same market and department like "women" contains "women"
                     if (dId == "wholesale") return@forEach//Wholesale dept. isn't accessible by default for all users and I can't even try/open it
+                    if (dId == "luxury" && id == "women") return@forEach
                     println(" dept: " + dId)
                     jdmap.get(dId)!!.also { jdd ->
                         jm.run { get("departments") as JSONArray? ?: JSONArray().also { put("departments", it)} }

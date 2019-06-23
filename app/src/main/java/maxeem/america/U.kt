@@ -25,4 +25,6 @@ object U { //Utils
         Log.d(TAG, msg)
     }
 
+    fun identifier(name:String, type:String) = U.ctx.resources.getIdentifier(name, type, ctx.packageName)
+
 }

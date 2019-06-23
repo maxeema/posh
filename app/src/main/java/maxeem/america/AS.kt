@@ -18,15 +18,27 @@ class AS : Activity() { //Shortcuts
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.`as`)
-        populate(l)
+        populate()
     }
 
-    private fun populate(l: LinearLayout) {
+    private fun populate() {
         l.addView(ChipGroup(this).apply {
             chipSpacingVertical = U.dpToPxi(7)
-            D.items.forEach { addView(createChip(it)) }
+            D.tabs.forEach { addView(createChip(it)) }
         })
-        addSep(l)
+        addSep()
+        l.addView(ChipGroup(this).apply {
+            chipSpacingVertical = U.dpToPxi(7)
+            D.markets.forEach { m-> addView(createChip(m).apply {
+                chipMinHeight *= 2; chipIconSize = chipIconSize.times(2)
+                if (m.isDepartment) {
+                    text = ""; textEndPadding = 0f; textStartPadding = 0f
+                } else {
+                    text = m.label[0].toString()
+                }
+            })}
+        })
+//        addSep()
     }
     private fun createChip(item: D.Item) = Chip(this).apply {
         item.icon.loadDrawableAsync(U.ctx, { h.postDelayed( {
@@ -44,18 +56,18 @@ class AS : Activity() { //Shortcuts
         //chipIcon = Drawable.createFromPath(File(a.filesDir, "men.png").absolutePath)
     }
     private fun onClick(v: View) {
-        (v.tag as D.Item).also { P.go(this, it.action) }
+        (v.tag as D.Item).also { item -> P.go(this, item.action) }
         finish()
     }
-    private fun onLongClick(view: View) = (view.tag as D.Item).let {
+    private fun onLongClick(view: View) = (view.tag as D.Item).let { item ->
         //P.pin(entry.key, entry.key, entry.value,
 //        IconCompat.createWithBitmap(BitmapFactory.decodeFile("/data/data/maxeem.america.debug/files/men.png")))
 //        IconCompat.createWithAdaptiveBitmap(BitmapFactory.decodeFile("/data/data/maxeem.america.debug/files/men.png")))
-        if (!S.requestPinned(it.id, it.label, it.icon))
+        if (!S.requestPinned(item.id, item.label, item.icon))
             U.toast(R.string.cant_pin)
         true
     }
-    private fun addSep(l: LinearLayout) {
+    private fun addSep() {
         l.addView(View(this).apply {
             setBackgroundColor(getColor(R.color.mtrl_chip_background_color))
         }, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, U.dpToPxi(1)).apply {

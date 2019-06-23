@@ -37,9 +37,6 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     implementation "com.google.android.material:material:${material_version}"
     implementation 'androidx.core:core-ktx:1.0.1'
-//implementation 'androidx.tonyodev.fetch2rx:xfetch2rx:3.1.1'
-implementation 'net.minidev:json-smart:2.3'
-implementation 'com.jayway.jsonpath:json-path:2.4.0'
 }
 
 repositories {

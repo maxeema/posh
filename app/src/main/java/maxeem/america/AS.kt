@@ -8,6 +8,7 @@ import android.view.View
 import android.widget.LinearLayout
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
+import kotlinx.android.synthetic.main.`as`.*
 import kotlin.random.Random
 
 class AS : Activity() { //Shortcuts
@@ -17,7 +18,7 @@ class AS : Activity() { //Shortcuts
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.`as`)
-        populate(findViewById(R.id.l))
+        populate(l)
     }
 
     private fun populate(l: LinearLayout) {

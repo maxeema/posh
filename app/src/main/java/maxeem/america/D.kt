@@ -44,7 +44,7 @@ object D { //Data
             JSONObject(it.readText())
         }.also { j->
             if (BuildConfig.DEBUG)
-                U.log("markets j: " + j)
+                U.log("markets j: $j")
             j.getJSONArray("markets").also { markets->
                 for (i in 0 until markets.length()) markets.getJSONObject(i).also { m->
                     add(Market.Type.M.create(m.getString("id"), m.getString("label")))

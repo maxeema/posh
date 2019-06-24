@@ -5,6 +5,8 @@ import android.os.Bundle
 import android.os.Handler
 import android.util.Log
 import android.view.View
+import android.view.ViewGroup
+import android.widget.HorizontalScrollView
 import android.widget.LinearLayout
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
@@ -22,42 +24,55 @@ class AS : Activity() { //Shortcuts
     }
 
     private fun populate() {
-        l.addView(ChipGroup(this).apply {
-            chipSpacingVertical = U.dpToPxi(7)
-            D.tabs.forEach { addView(createChip(it)) }
-        })
-        addSep()
-        l.addView(ChipGroup(this).apply {
-            chipSpacingVertical = U.dpToPxi(7)
-            D.markets.forEach { m-> addView(createChip(m).apply {
-                chipMinHeight *= 2; chipIconSize = chipIconSize.times(2)
-                if (m.isDepartment) {
-                    text = ""; textEndPadding = 0f; textStartPadding = 0f
-                } else {
-                    text = m.label[0].toString()
+        tabs.apply {
+            D.tabs.forEach { tab-> addView(createChip(tab).apply {
+                chipMinHeight = U.dpToPxf(48)
+                with (U.dpToPxf(20f.let{ if(tab.action=="sell") it.times(1.35f) else it })) {
+                    chipStartPadding = this; chipEndPadding = this
                 }
             })}
-        })
-//        addSep()
+        }
+        lateinit var chipGroup : ChipGroup
+        D.markets.forEach { m -> createChip(m).apply {
+            chipMinHeight = U.dpToPxf(56)
+            if (!m.isDepartment) {
+                markets.addView(HorizontalScrollView(this@AS).also { s-> s.addView(ChipGroup(this@AS).also {g->
+                    with(s) {
+                        isHorizontalFadingEdgeEnabled = true
+                        setFadingEdgeLength(U.dpToPxi(60))
+                        scrollBarStyle = View.SCROLLBARS_OUTSIDE_INSET
+                    }
+                    chipGroup = g
+                    g.setSingleLine(true)
+                })}, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).also {
+                    it.bottomMargin = U.dpToPxi(10)
+                })
+            }
+            chipStartPadding = U.dpToPxf(7)
+            chipGroup.addView(this)
+        }}
     }
     private fun createChip(item: D.Item) = Chip(this).apply {
-        item.icon.loadDrawableAsync(U.ctx, { h.postDelayed( {
+        item.icon.loadDrawableAsync(U.ctx, { d-> h.postDelayed( {
             if (!isFinishing)
-                chipIcon = it
+                chipIcon = d
+            chipIconSize = kotlin.math.max(d.intrinsicHeight, d.intrinsicWidth).toFloat()
             if (BuildConfig.DEBUG)
-                Log.e("posh", "${this@AS} loadDrawableAsync " + item.id + "; a.isFinishing: " + isFinishing)
-        }, Random.nextInt(500).toLong())}, h)
-        chipStartPadding = U.dpToPxf(8)
-        text = item.label
+                Log.e("posh", "${U.ctx.resources.displayMetrics.density} ${this@AS} (${d.intrinsicWidth}x${d.intrinsicHeight})" +
+                        " loadDrawableAsync " + item.id + "; a.isFinishing: " + isFinishing )
+        }, Random.nextInt(1500).toLong())}, h)
+        with(0f) {
+            textStartPadding = this; textEndPadding = this;
+        }
         tag = item
         setOnClickListener(::onClick)
         setOnLongClickListener(this@AS::onLongClick)
 //android.util.Log.d("posh", "icon: " + File(ctx.filesDir, "men.png").absolutePath + " - " + File(ctx.filesDir, "men.png").canonicalFile)
         //chipIcon = Drawable.createFromPath(File(a.filesDir, "men.png").absolutePath)
     }
-    private fun onClick(v: View) {
-        (v.tag as D.Item).also { item -> P.go(this, item.action) }
-        finish()
+    private fun onClick(v: View) = (v.tag as D.Item).let { item->
+        P.go(this, item.action)
+        Unit //finish()
     }
     private fun onLongClick(view: View) = (view.tag as D.Item).let { item ->
         //P.pin(entry.key, entry.key, entry.value,
@@ -67,13 +82,13 @@ class AS : Activity() { //Shortcuts
             U.toast(R.string.cant_pin)
         true
     }
-    private fun addSep() {
-        l.addView(View(this).apply {
-            setBackgroundColor(getColor(R.color.mtrl_chip_background_color))
-        }, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, U.dpToPxi(1)).apply {
-            topMargin = U.dpToPxi(10)
-            bottomMargin = topMargin
-        })
-    }
+//    private fun addSep() {
+//        markets.addView(View(this).apply {
+//            setBackgroundColor(getColor(R.color.mtrl_chip_background_color))
+//        }, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, U.dpToPxi(1)).apply {
+//            topMargin = U.dpToPxi(10)
+//            bottomMargin = topMargin
+//        })
+//    }
 
 }

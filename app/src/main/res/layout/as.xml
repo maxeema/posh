@@ -1,22 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent" android:layout_height="match_parent"
-    android:paddingHorizontal="20dp" android:paddingVertical="10dp">
-    <TextView android:id="@+id/tap" android:text="@string/tap"
+    android:paddingHorizontal="10dp" android:paddingVertical="10dp">
+    <TextView android:id="@+id/title" android:maxLines="1" android:text="@string/click"
         android:layout_alignParentTop="true" android:gravity="center"
-        android:textAppearance="@style/TextAppearance.AppCompat.Large"
+        android:textAppearance="@style/TextAppearance.AppCompat.Medium"
         android:layout_width="match_parent" android:layout_height="wrap_content" />
     <androidx.core.widget.NestedScrollView
-        android:layout_above="@id/click" android:layout_below="@id/tap"
+        android:layout_above="@id/tabs" android:layout_below="@id/title"
         android:layout_width="match_parent" android:layout_height="match_parent"
         android:paddingVertical="10dp">
-        <LinearLayout android:id="@+id/l" android:orientation="vertical"
-            android:layout_width="match_parent" android:layout_height="wrap_content">
+        <LinearLayout android:id="@+id/markets" android:orientation="vertical"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
+            android:layout_gravity="center_vertical">
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
-    <TextView android:id="@+id/click" android:text="@string/click"
-        android:layout_alignParentBottom="true"
-        android:textAppearance="@style/TextAppearance.AppCompat.Medium" android:gravity="center"
-        android:layout_width="match_parent" android:layout_height="wrap_content" />
+    <com.google.android.material.chip.ChipGroup android:id="@+id/tabs"
+        app:singleLine="true" android:paddingVertical="5dp"
+        android:layout_centerHorizontal="true" android:layout_alignParentBottom="true"
+        android:layout_width="wrap_content" android:layout_height="wrap_content"/>
 </RelativeLayout>

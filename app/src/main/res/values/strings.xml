@@ -3,7 +3,7 @@
     <string name="action">Action</string>
     <string name="install_first">"Install the <b>Poshmark</b> app first</string>
     <string name="shortcuts">Shortcuts</string>
-    <string name="title" formatted="true">Poshmark app Shortcuts</string>
-    <string name="click">Click item to open app</string>
+    <string name="title">Poshmark app Shortcuts</string>
+    <string name="click">Long-tap to shortcut | Click to open</string>
     <string name="cant_pin">Sorry, your device conf. isn\'t supported</string>
 </resources>

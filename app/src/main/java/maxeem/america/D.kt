@@ -9,6 +9,9 @@ object D { //Data
     open class Item (val id: String, val action: String, val label: String, val icon: Icon) {
         constructor(id: String, action: String, label: String, @DrawableRes icon: Int) :
                 this(id, action, label, Icon.createWithResource(U.ctx, icon))
+        override fun hashCode() = id.hashCode()
+        override fun toString() = id
+        override fun equals(other: Any?) = this === other || id == other.let { if (it is Item) it.id else null }
     }
     class Market : Item {
         enum class Type(val id: String) {

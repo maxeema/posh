@@ -29,7 +29,7 @@ object D { //Data
     fun actionById(id: String) = tabs.firstOrNull { id == it.id }?.action ?: markets.firstOrNull { id==it.id }?.action
 
     val tabs = arrayOf(
-//        Item("tab_feed", "feed", "Feed", R.drawable.tab_feed),
+        Item("tab_feed", "feed", "Feed", R.drawable.tab_feed),
         Item("tab_shop", "shop", "Shop", R.drawable.tab_shop),
         Item("tab_sell", "sell", "Sell", R.drawable.tab_sell),
         Item("tab_news", "news", "News", R.drawable.tab_news),

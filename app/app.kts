@@ -7,21 +7,27 @@
 import com.jayway.jsonpath.JsonPath
 import net.minidev.json.*
 import net.minidev.json.parser.JSONParser
+import kotlin.math.max
 import java.io.File
 import java.net.URL
 import java.nio.charset.Charset
+import java.util.Comparator
+import java.util.function.ToIntFunction
 
 private object Experiences {
     val url = URL("https://poshmark.com/api/meta/experiences")
     val file = File("app.kts.data/experiences.json")
 }
 private object Markets {
+    val order = arrayOf("home_a", "kids", "all", "men", "women")
     const val jsonFile = "src/main/res/raw/markets.json"
     const val iconsPath = "src/main/res/mipmap-xxxhdpi"
 }
 private val UTF_8 = Charset.forName("UTF-8")
 
 println("- start")
+//
+fun JSONArray.appendElement(idx:Int, item:JSONObject) = run { add(idx, item) }
 //
 kotlin.run {
     println("${Experiences.file} -> isFile: ${Experiences.file.isFile} - length: ${Experiences.file.length()}")
@@ -37,14 +43,18 @@ kotlin.run {
             appendField("markets", JSONArray())
             appendField("date", JsonPath.compile("experiences.updated_at").read(j))
         }
-        JsonPath.compile("presentation.groups").read<Collection<JSONObject>>(j).stream().skip(1).forEach { jp ->
-            var id = jp.getAsString("id")
-            if (id == "home") //Home market has the 'home_a' alias now
-                id = "home_a"
+        mutableMapOf<String, JSONObject>().apply {
+            JsonPath.compile("presentation.groups").read<Collection<JSONObject>>(j).stream().skip(1).forEach { jp ->
+                put(jp.getAsString("id").let {
+                    if (it == "home") "home_a" else it
+                }, jp)
+            }
+        }.toSortedMap(Comparator{ id1,id2 -> Markets.order.indexOf(id1).compareTo(Markets.order.indexOf(id2)) }).forEach { entry ->
+            val (id, jp) = entry
             println("market id: " + id)
             jdmap.get(id)!!.also { jdm-> JSONObject().also { jm ->
                 jout.get("markets").let{ it as JSONArray }.appendElement(jm.appendField("id", id).appendField("label", jdm.getAsString("short_display_name")))
-                Markets.iconsPath.let{File(it, "market_$id.png")}.takeUnless { it.length() > 1}?.run {
+                Markets.iconsPath.let{File(it, "market_$id.png")}.takeUnless{ it.length() > 1 }?.run {
                     wgetAsBinary(URL(jdm.getAsString("img_url_large")), this) }
                 JsonPath.compile("content.data.*.id").read<Collection<String>>(jp).forEach { dId: String ->
                     if (id == dId) return@forEach //skip the same market and department like "women" contains "women"

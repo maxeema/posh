@@ -2,4 +2,5 @@
 /release
 src/main/res/mipmap-xxxhdpi/market_*.png
 src/main/res/mipmap-xxxhdpi/department_*.png
+src/main/res/raw/markets.json
 

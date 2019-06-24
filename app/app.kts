@@ -25,10 +25,17 @@ private object Markets {
     val order = arrayOf("home_a", "kids", "all", "men", "women")
     const val jsonFile = "src/main/res/raw/markets.json"
     const val iconsPath = "src/main/res/mipmap-xxxhdpi"
-//    val effects = mapOf("activ_k" to Img.Effect.VINTAGE)
-}
-private val UTF_8 = Charset.forName("UTF-8")
+    val iconEffect = { id:String -> iconsEffectMap.get(id) ?: Img.Effect.MODERN }
+    private val iconsEffectMap = mapOf(
+        "all" to Img.Effect.NO
+//                    "activ_k" to Img.Effect.VINTAGE,
+    )
 
+}
+private object Conts {
+    val UTF_8 = Charset.forName("UTF-8")
+}
+//
 println("- start")
 //
 fun JSONArray.appendElement(idx:Int, item:JSONObject) = run { add(idx, item) }
@@ -36,8 +43,8 @@ fun JSONArray.appendElement(idx:Int, item:JSONObject) = run { add(idx, item) }
 kotlin.run {
     println("${Experiences.file} -> isFile: ${Experiences.file.isFile} - length: ${Experiences.file.length()}")
     Experiences.file.run {
-        takeUnless {length() > 1}?.apply { wgetAsText(Experiences.url, this) }
-        JSONParser(JSONParser.MODE_PERMISSIVE).parse(readText(UTF_8))
+        takeUnless {length() > 1}?.apply { Utils.wgetAsText(Experiences.url, this) }
+        JSONParser(JSONParser.MODE_PERMISSIVE).parse(readText(Conts.UTF_8))
     }.also { j ->
         val jdmap = mutableMapOf<String, JSONObject>().apply {
             JsonPath.compile("data.*").read<List<JSONObject>>(j)
@@ -59,8 +66,7 @@ kotlin.run {
             jdmap.get(id)!!.also { jdm-> JSONObject().also { jm ->
                 jout.get("markets").let{ it as JSONArray }.appendElement(jm.appendField("id", id).appendField("label", jdm.getAsString("short_display_name")))
                 Markets.iconsPath.let{File(it, "market_$id.png")}.takeUnless{ it.length() > 1 }?.run {
-                    Img.Effect.MODERN.apply(URL(jdm.getAsString("img_url_large")), this)}
-//                    wgetAsBinary(URL(jdm.getAsString("img_url_large")), this) }
+                    Markets.iconEffect(id).apply(URL(jdm.getAsString("img_url_large")), this)}
                 JsonPath.compile("content.data.*.id").read<Collection<String>>(jp).forEach { dId: String ->
                     if (id == dId) return@forEach //skip the same market and department like "women" contains "women"
                     if (dId == "wholesale") return@forEach//Wholesale dept. isn't accessible by default for all users and I can't even try/open it
@@ -70,30 +76,31 @@ kotlin.run {
                         jm.run { get("departments") as JSONArray? ?: JSONArray().also { put("departments", it)} }
                             .appendElement(JSONObject().appendField(dId, jdd.getAsString("short_display_name")))
                         Markets.iconsPath.let{File(it, "department_$dId.png")}.takeUnless { it.length() > 1 }?.run {
-                            Img.Effect.MODERN.apply(URL(jdd.getAsString("img_url_large")), this) }
-//                            wgetAsBinary(URL(jdd.getAsString("img_url_large")), this) }
+                            Markets.iconEffect(dId).apply(URL(jdd.getAsString("img_url_large")), this) }
                     }
                 }
             }}
         }
         println("jout: " + jout)
-        Markets.jsonFile.let { File(it)}.writer(UTF_8).use { jout.writeJSONString(it) }
-//        println(JsonPath.compile("markets[0].departments").read<JSONArray>(jout).get(0).let {it as JSONObject}.entries.first())
+        Markets.jsonFile.let { File(it)}.writer(Conts.UTF_8).use { jout.writeJSONString(it) }
     }
-}
-fun wgetAsText(url: URL, to: File) = to.apply {
-    print("-- wgetAsText - $url -> $to ...")
-    writeText(url.readText(UTF_8), UTF_8)
-    println(" completed -> file size - ${to.length()}")
-}
-fun wgetAsBinary(url: URL, to: File) = to.apply {
-    print("-- wgetAsBinary - $url -> $to ...")
-    url.openStream().copyTo(outputStream())
-    println(" completed -> file size - ${to.length()}")
 }
 //
 //
 println("- end")
+//
+object Utils {
+    fun wgetAsText(url: URL, to: File) = to.apply {
+        print("-- Utils.wgetAsText - $url -> $to ...")
+        writeText(url.readText(Conts.UTF_8), Conts.UTF_8)
+        println(" completed -> file size - ${to.length()}")
+    }
+    fun wgetAsBinary(url: URL, to: File) = to.apply {
+        print("-- Utils.wgetAsBinary - $url -> $to ...")
+        url.openStream().copyTo(outputStream())
+        println(" completed -> file size - ${to.length()}")
+    }
+}
 //
 //
 object Img {
@@ -110,18 +117,28 @@ object Img {
                     adjustImage(it, Triple(1.2f, 1.0f, 0.7f)) }
             }
         }),
-//        VINTAGE,
+        VINTAGE({ src, dst ->
+            throw NotImplementedError()
+            //blendColor(adjustImage(bitmap, 1.0f, 1.0f, 1.2f), Color.argb(255, 247, 218, 174), Mode.MULTIPLY)
+        }),
         RETRO({ src,dst ->
             filter(src, dst) { x,y,pxl -> balanceColor(pxl, Triple(1.4f, 1.3f, 1.0f)) }
         }),
         STREET({ src, dst ->
             filter(src, dst) { x, y, pxl -> adjustImage(pxl, Triple(1.5f, 1.0f, 1.4f)) }
+        }),
+        NO({ src, dest ->
+            throw Exception("Impossible is NOT possible")
         });
         //@param what - URL, File, InputStream
         public fun apply(what: URL, to: File) {
-            print("-- ImgFilter.process - $what -> $to ...")
-            ImageIO.write(this .action(ImageIO.read(what), null), "png", to).takeUnless { it }?.apply { throw Exception("Image write error $what to $to")}
-            println(" completed -> file size - ${to.length()}")
+            if (this == NO) {
+                Utils.wgetAsBinary(what, to)
+            } else {
+                print("-- ImgFilter.process - $what -> $to ...")
+                ImageIO.write(this.action(ImageIO.read(what), null), "png", to).takeUnless { it }?.apply { throw Exception("Image write error $what to $to") }
+                println(" completed -> file size - ${to.length()}")
+            }
         }
     }
     //

@@ -13,9 +13,9 @@ object U { //Utils
     private const val TAG = "posh"
 
     fun dpToPxi(@Dimension(unit = Dimension.DP) value : Int) = kotlin.math.ceil(dpToPxf(value)).toInt()
-    fun dpToPxf(@Dimension(unit = Dimension.DP) value : Int) =
-            TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,
-                    value.toFloat(), U.ctx.resources.displayMetrics)
+    fun dpToPxf(@Dimension(unit = Dimension.DP) value : Int) = dpToPxf(value.toFloat())
+    fun dpToPxf(@Dimension(unit = Dimension.DP) value : Float) =
+            TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, value, ctx.resources.displayMetrics)
 
     fun toast(@StringRes text: Int) {
         Toast.makeText(ctx, text, Toast.LENGTH_LONG).show()
@@ -25,6 +25,6 @@ object U { //Utils
         Log.d(TAG, msg)
     }
 
-    fun identifier(name:String, type:String) = U.ctx.resources.getIdentifier(name, type, ctx.packageName)
+    fun identifier(name:String, type:String) = ctx.resources.getIdentifier(name, type, ctx.packageName)
 
 }

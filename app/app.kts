@@ -1,7 +1,7 @@
 //
 //
-//JSONPath docs - https://www.baeldung.com/guide-to-jayway-jsonpath
-//Usage - kotlinc -cp app.kts.data/slf4j-api-1.7.25.jar:app.kts.data/json-smart-2.3.jar:app.kts.data/json-path-2.4.0.jar -script app.kts
+//https://www.baeldung.com/guide-to-jayway-jsonpath
+//kotlinc -cp app.kts.data/slf4j-api-1.7.25.jar:app.kts.data/json-smart-2.3.jar:app.kts.data/json-path-2.4.0.jar -script app.kts
 //
 //
 //
@@ -14,9 +14,11 @@ import java.net.URL
 import java.nio.charset.Charset
 import java.util.*
 import javax.imageio.ImageIO
-
 //
 //
+private object Conts {
+    val UTF_8 = Charset.forName("UTF-8")
+}
 private object Experiences {
     val url = URL("https://poshmark.com/api/meta/experiences")
     val file = File("app.kts.data/experiences.json")
@@ -25,15 +27,14 @@ private object Markets {
     val order = arrayOf("home_a", "kids", "all", "men", "women")
     const val jsonFile = "src/main/res/raw/markets.json"
     const val iconsPath = "src/main/res/mipmap-xxxhdpi"
-    val iconEffect = { id:String -> iconsEffectMap.getOrDefault(id, Img.Effect.MODERN) }
-    private val iconsEffectMap = mapOf(
-        "all" to Img.Effect.NO
-//                    "activ_k" to Img.Effect.VINTAGE,
+    //
+    val iconEffectFor : (id:String)->Img.Effect = l@{ id->
+        for (entry in iconEffects.entries) if (entry.value.contains(id)) return@l entry.key
+        Img.Effect.NO
+    }
+    private val iconEffects = mapOf(
+        Img.Effect.MODERN to setOf("luxur_k","gifts","luxur","luxur_m","petit_w","plus","promd_w")
     )
-
-}
-private object Conts {
-    val UTF_8 = Charset.forName("UTF-8")
 }
 //
 println("- start")
@@ -66,7 +67,7 @@ kotlin.run {
             jdmap.getValue(id).also { jdm-> JSONObject().also { jm ->
                 jout.get("markets").let{ it as JSONArray }.appendElement(jm.appendField("id", id).appendField("label", jdm.getAsString("short_display_name")))
                 Markets.iconsPath.let{File(it, "market_$id.png")}.takeUnless{ it.length() > 1 }?.run {
-                    Markets.iconEffect(id).apply(URL(jdm.getAsString("img_url_large")), this)}
+                    Markets.iconEffectFor(id).apply(URL(jdm.getAsString("img_url_large")), this)}
                 JsonPath.compile("content.data.*.id").read<Collection<String>>(jp).forEach { dId: String ->
                     if (id == dId) return@forEach //skip the same market and department like "women" contains "women"
                     if (dId == "wholesale") return@forEach//Wholesale dept. isn't accessible by default for all users and I can't even try/open it
@@ -76,7 +77,7 @@ kotlin.run {
                         jm.run { get("departments") as JSONArray? ?: JSONArray().also { put("departments", it)} }
                             .appendElement(JSONObject().appendField(dId, jdd.getAsString("short_display_name")))
                         Markets.iconsPath.let{File(it, "department_$dId.png")}.takeUnless { it.length() > 1 }?.run {
-                            Markets.iconEffect(dId).apply(URL(jdd.getAsString("img_url_large")), this) }
+                            Markets.iconEffectFor(dId).apply(URL(jdd.getAsString("img_url_large")), this) }
                     }
                 }
             }}
@@ -135,7 +136,7 @@ object Img {
             if (this == NO) {
                 Utils.wgetAsBinary(what, to)
             } else {
-                print("-- ImgFilter.process - $what -> $to ...")
+                print("-- Img.Effect.apply $this on $what -> $to ...")
                 ImageIO.write(this.action(ImageIO.read(what), null), "png", to).takeUnless { it }?.apply { throw Exception("Image write error $what to $to") }
                 println(" completed -> file size - ${to.length()}")
             }

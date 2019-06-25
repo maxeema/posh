@@ -25,7 +25,7 @@ private object Markets {
     val order = arrayOf("home_a", "kids", "all", "men", "women")
     const val jsonFile = "src/main/res/raw/markets.json"
     const val iconsPath = "src/main/res/mipmap-xxxhdpi"
-    val iconEffect = { id:String -> iconsEffectMap.get(id) ?: Img.Effect.MODERN }
+    val iconEffect = { id:String -> iconsEffectMap.getOrDefault(id, Img.Effect.MODERN) }
     private val iconsEffectMap = mapOf(
         "all" to Img.Effect.NO
 //                    "activ_k" to Img.Effect.VINTAGE,
@@ -63,7 +63,7 @@ kotlin.run {
         }.toSortedMap(Comparator{ id1,id2 -> Markets.order.indexOf(id1).compareTo(Markets.order.indexOf(id2)) }).forEach { entry ->
             val (id, jp) = entry
             println("market id: " + id)
-            jdmap.get(id)!!.also { jdm-> JSONObject().also { jm ->
+            jdmap.getValue(id).also { jdm-> JSONObject().also { jm ->
                 jout.get("markets").let{ it as JSONArray }.appendElement(jm.appendField("id", id).appendField("label", jdm.getAsString("short_display_name")))
                 Markets.iconsPath.let{File(it, "market_$id.png")}.takeUnless{ it.length() > 1 }?.run {
                     Markets.iconEffect(id).apply(URL(jdm.getAsString("img_url_large")), this)}
@@ -72,7 +72,7 @@ kotlin.run {
                     if (dId == "wholesale") return@forEach//Wholesale dept. isn't accessible by default for all users and I can't even try/open it
                     if (dId == "luxury" && id == "women") return@forEach
                     println(" dept: " + dId)
-                    jdmap.get(dId)!!.also { jdd ->
+                    jdmap.getValue(dId).also { jdd ->
                         jm.run { get("departments") as JSONArray? ?: JSONArray().also { put("departments", it)} }
                             .appendElement(JSONObject().appendField(dId, jdd.getAsString("short_display_name")))
                         Markets.iconsPath.let{File(it, "department_$dId.png")}.takeUnless { it.length() > 1 }?.run {

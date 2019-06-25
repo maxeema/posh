@@ -140,6 +140,7 @@ object Img {
                 println(" completed -> file size - ${to.length()}")
             }
         }
+        override fun toString() = name
     }
     //
     private fun adjustImage(pxl: Int, args: Triple<Float, Float, Float>): Int {

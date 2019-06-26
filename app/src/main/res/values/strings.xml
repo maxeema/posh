@@ -1,4 +1,5 @@
 <resources>
+    <string name="maxeem">Maxeem America</string>
     <string name="app_name">POSH</string>
     <string name="action">Action</string>
     <string name="install_first">"Install the <b>Poshmark</b> app first</string>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts
+    xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut android:shortcutId="maxeem" android:enabled="true"
+        android:icon="@mipmap/maxeem"
+        android:shortcutShortLabel="@string/maxeem" android:shortcutLongLabel="@string/maxeem">
+        <intent android:action="android.intent.action.SENDTO"
+            android:data="mailto:Maxeem.America@gmail.com"/>
+    </shortcut>
+</shortcuts>

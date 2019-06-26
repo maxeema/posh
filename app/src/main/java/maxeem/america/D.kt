@@ -29,7 +29,10 @@ object D { //Data
     }
 
     fun validate(id: String) = actionById(id) != null
-    fun actionById(id: String) = tabs.firstOrNull { id == it.id }?.action ?: markets.firstOrNull { id==it.id }?.action
+    fun actionById(id: String) = when {
+        id.startsWith("closet_") -> "closet/" + id.substringAfter("closet_")
+        else -> tabs.firstOrNull { id == it.id }?.action ?: markets.firstOrNull { id == it.id }?.action
+    }
 
     val tabs = arrayOf(
         Item("tab_feed", "feed", "Feed", R.drawable.tab_feed),

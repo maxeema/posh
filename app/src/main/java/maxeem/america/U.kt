@@ -5,12 +5,16 @@ import android.util.TypedValue
 import android.widget.Toast
 import androidx.annotation.Dimension
 import androidx.annotation.StringRes
+import java.nio.charset.Charset
 
 object U { //Utils
 
     val ctx = App.instance
 
+    val UTF_8 = Charset.forName("UTF-8")
+
     private const val TAG = "posh"
+
 
     fun dpToPxi(@Dimension(unit = Dimension.DP) value : Int) = kotlin.math.ceil(dpToPxf(value)).toInt()
     fun dpToPxf(@Dimension(unit = Dimension.DP) value : Int) = dpToPxf(value.toFloat())

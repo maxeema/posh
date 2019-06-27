@@ -7,10 +7,12 @@ import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Icon
 import android.os.AsyncTask
 import android.text.*
+import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import androidx.appcompat.app.AlertDialog
+import androidx.core.content.ContextCompat.getSystemService
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import java.net.URL
 
@@ -43,6 +45,8 @@ object Closet {
                 })
             }, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT))
         }).setPositiveButton(R.string.add) { d, v->
+            getSystemService(a, InputMethodManager::class.java)
+                ?.hideSoftInputFromWindow(ed.windowToken, 0)
             add(a, nd, correct(ed.text.toString().trim()))
         }.create().apply {
             nd = this

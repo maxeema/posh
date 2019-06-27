@@ -58,52 +58,61 @@ object Closet {
     private fun correct(name:String) = if (name.startsWith("@")) name.substringAfter("@") else name
     //
     private fun add(a: Activity, nd: AlertDialog, name: String) {
+        lateinit var task : PinTask
         MaterialAlertDialogBuilder(a).setView(ProgressBar(a).apply {
             alpha = .6f
         })
-        .setCancelable(false)
+        .setCancelable(true)
+        .setOnCancelListener {
+            task.cancel(true)
+        }
         .setBackground(ColorDrawable(Color.parseColor("#99222222")))
         .create().also { d ->
+            d.setCanceledOnTouchOutside(false)
+            task = PinTask(a, nd, d,"closet_$name", "@$name", "$URL/$name") { html->
+                var url = html.substring(html.indexOf("http", html.indexOf("user-image-con", ignoreCase = true), true)).let {
+                    it.substringBefore(">").substringBefore("\"").substringBefore("'").substringBefore(" ")//extract img.src attribute value
+                }
+                if (BuildConfig.DEBUG)
+                    U.log("$name closet url -> $url")
+                url
+            }
             d.setOnShowListener { _ ->
-                PinTask(a, nd, d,"closet_$name", "@$name", "$URL/$name") { html->
-                    var url = html.substring(html.indexOf("http", html.indexOf("user-image-con", ignoreCase = true), true)).let {
-                        it.substringBefore(">").substringBefore("\"").substringBefore("'").substringBefore(" ")//extract img.src attribute value
-                    }
-                    if (BuildConfig.DEBUG)
-                        U.log("$name closet url -> $url")
-                    url
-                }.execute()
+                task.execute()
             }
         }.show()
     }
 
     private class PinTask(val a: Activity, val nd: AlertDialog, val pd: AlertDialog,
-                  val id:String, val label:String, val pageUrl:String, val iconExtract: (html:String)->String)
-            : AsyncTask<Unit, Unit, Any>() {
+          val id:String, val label:String, val pageUrl:String, val iconExtract: (html:String)->String)
+                : AsyncTask<Unit, Unit, Any>() {
         override fun doInBackground(vararg p0: Unit?): Any {
             return runCatching {
                 Thread.sleep(500)
                 val iconUrl = iconExtract(URL(pageUrl).readText(U.UTF_8))
                 if (BuildConfig.DEBUG)
                     U.log(" icon url -> $iconUrl")
+                if (isCancelled) return Unit
                 URL(iconUrl).openStream().use { `in`->
                     S.requestPinned(id, label, Icon.createWithAdaptiveBitmap(BitmapFactory.decodeStream(`in`)))
                 }
             }
         }
+        private fun isNotMatter() = isCancelled || !pd.isShowing || a.isFinishing || a.isDestroyed
         override fun onCancelled(result: Any?) {
             if (BuildConfig.DEBUG)
-                U.log(" onCancelled $result")
+                U.log(" onCancelled: ${Thread.currentThread()} - isNoMatterMore ${isNotMatter()} \n  result - > $result")
+            if (isNotMatter()) return
             pd.dismiss()
         }
         override fun onPostExecute(result: Any) {
             if (BuildConfig.DEBUG)
-                U.log(" onPostExecute: isCancelled $isCancelled; status $status; pd.isShowing ${pd.isShowing}" +
-                    "\n  result -> $result")
-            if (isCancelled || !pd.isShowing) return
+                U.log(" onPostExecute: ${Thread.currentThread()} - isCancelled $isCancelled; status $status; pd.isShowing ${pd.isShowing}; a isFinishing ${a.isFinishing}, isDestroyed ${a.isDestroyed}" +
+                    "\n  result - > $result")
+            if (isNotMatter()) return
             pd.dismiss()
-            let { result as Result<Boolean> }.onSuccess { pinned ->
-                if (!pinned)
+            let { result as Result<Boolean> }.onSuccess { wasPinned ->
+                if (!wasPinned)
                     U.toast(R.string.cant_pin)
             }.onFailure { e ->
                 when (e) {

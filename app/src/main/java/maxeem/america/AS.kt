@@ -29,7 +29,7 @@ class AS : Activity() { //Shortcuts
     private fun populateTabs() {
         tabs.apply {
             D.tabs.forEach { tab-> addView(createChip(tab).apply {
-                chipMinHeight = U.dpToPxf(48)
+                chipMinHeight = U.dpToPxf(44)
                 with (U.dpToPxf(20f.let{ if(tab.action=="sell") it.times(1.35f) else it })) {
                     chipStartPadding = this; chipEndPadding = this
                 }

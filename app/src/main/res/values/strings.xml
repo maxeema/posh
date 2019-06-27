@@ -6,6 +6,11 @@
     <string name="shortcuts">Shortcuts</string>
     <string name="title">Poshmark app Shortcuts</string>
     <string name="clickOrTap">Long-tap to shortcut | Click to open</string>
-    <string name="add_closet">+ Closet</string>
     <string name="cant_pin">Sorry, your device conf. isn\'t supported</string>
+    <string name="closet">+ Closet</string>
+    <string name="add">Add</string>
+    <string name="not_found">Nothing found. Check the spelling out.</string>
+    <string name="cant_connect">Can\'t connect. Check Internet access first.</string>
+    <string name="unlucky">Something\'s wrong. Right now we can\'t help.</string>
+    <string name="got_it">Got it</string>
 </resources>

@@ -9,8 +9,9 @@
     <string name="cant_pin">Sorry, your device conf. isn\'t supported</string>
     <string name="closet">+ Closet</string>
     <string name="add">Add</string>
-    <string name="not_found">Nothing found. Plz, check the spelling out.</string>
-    <string name="cant_connect">Can\'t connect. Plz, check Internet access.</string>
+    <string name="not_found">Not found. Plz, check the spelling out.</string>
+    <string name="cant_connect">Can\'t connect. Plz, check the Internet access.</string>
+    <string name="try_later">Too long. Plz, try again a bit later.</string>
     <string name="smth_wrong">Something\'s wrong. Right now we can\'t help.</string>
     <string name="got_it">Got it</string>
 </resources>

@@ -116,13 +116,19 @@ object Closet {
                     U.toast(R.string.cant_pin)
             }.onFailure { e ->
                 when (e) {
-                    is java.io.FileNotFoundException -> R.string.not_found
-                    is java.net.UnknownHostException -> R.string.cant_connect
-                    else -> R.string.smth_wrong
-                }.also { msg ->
+                    is java.io.FileNotFoundException -> R.string.not_found to false
+                    is java.net.UnknownHostException -> R.string.cant_connect to false
+                    is java.net.ConnectException -> R.string.cant_connect to false
+                    is java.net.SocketTimeoutException -> R.string.try_later to false
+                    else -> R.string.smth_wrong to true
+                }.also { val (msg, verbose) = it
                     MaterialAlertDialogBuilder(a)
                     .setMessage(Html.fromHtml(U.ctx.getString(msg).let {
-                        if (msg == R.string.smth_wrong) it.plus("<br/><small>${e.javaClass.name}</small>") else it
+                        if (verbose) {
+                            it.plus("<br/><br/><small>[ ${e.javaClass.simpleName} ]").let {
+                                if (e.message.isNullOrBlank()) it else it.plus("<br/>${e.message}")
+                            }.plus("</small>")
+                        } else it
                     }, Html.FROM_HTML_MODE_COMPACT))
                     .setPositiveButton(R.string.got_it) {d, btn -> d.dismiss()}.create().apply {
                         setOnDismissListener { nd.show() }

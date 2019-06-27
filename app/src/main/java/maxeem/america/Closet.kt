@@ -16,7 +16,10 @@ import java.net.URL
 
 object Closet {
     //
-    private val REGEX = Regex("@?[A-Za-z\\d-_]+")
+    private const val URL = "https://poshmark.com/closet"
+    private const val DEF_CLOSET = "@jaw_breaker"
+    private const val REGEX = "@?[A-Za-z\\d-_]+"
+    private const val MAX_LENGTH = 30
     //
     fun wanna(a: Activity) {
         lateinit var nd : AlertDialog
@@ -27,10 +30,10 @@ object Closet {
             ll.setPadding(U.dpToPxi(30), U.dpToPxi(10), U.dpToPxi(15), U.dpToPxi(5))
             ll.addView(EditText(a).apply {
                 ed = this
-                setText("@jaw_breaker")
-                maxLines = 2
+                setText(DEF_CLOSET)
+                maxLines = 1
                 inputType = InputType.TYPE_CLASS_TEXT.or(InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS)
-                filters = filters.plusElement(InputFilter.LengthFilter(55))
+                filters = filters.plusElement(InputFilter.LengthFilter(MAX_LENGTH))
                 addTextChangedListener(object: TextWatcher {
                     override fun afterTextChanged(p0: Editable?) { }
                     override fun beforeTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) { }
@@ -50,8 +53,9 @@ object Closet {
         }.show()
     }
     //
-    private fun validate(name:String) = name.isNotBlank() && name.matches(REGEX)
-    private fun correct(name:String) = if (name.startsWith("@")) name.substring(1) else name
+    private val regex = Regex(REGEX)
+    private fun validate(name:String) = name.isNotBlank() && name.matches(regex)
+    private fun correct(name:String) = if (name.startsWith("@")) name.substringAfter("@") else name
     //
     private fun add(a: Activity, nd: AlertDialog, name: String) {
         MaterialAlertDialogBuilder(a).setView(ProgressBar(a).apply {
@@ -61,7 +65,7 @@ object Closet {
         .setBackground(ColorDrawable(Color.parseColor("#99222222")))
         .create().also { d ->
             d.setOnShowListener { _ ->
-                PinTask(a, nd, d,"closet_$name", "@$name", "https://poshmark.com/closet/$name") { html->
+                PinTask(a, nd, d,"closet_$name", "@$name", "$URL/$name") { html->
                     var url = html.substring(html.indexOf("http", html.indexOf("user-image-con", ignoreCase = true), true)).let {
                         it.substringBefore(">").substringBefore("\"").substringBefore("'").substringBefore(" ")//extract img.src attribute value
                     }
@@ -105,10 +109,12 @@ object Closet {
                 when (e) {
                     is java.io.FileNotFoundException -> R.string.not_found
                     is java.net.UnknownHostException -> R.string.cant_connect
-                    else -> R.string.unlucky
+                    else -> R.string.smth_wrong
                 }.also { msg ->
                     MaterialAlertDialogBuilder(a)
-                    .setMessage(Html.fromHtml(U.ctx.getString(msg).plus("<br/>").plus("<small>${e.javaClass.name}</small>"), Html.FROM_HTML_MODE_COMPACT))
+                    .setMessage(Html.fromHtml(U.ctx.getString(msg).let {
+                        if (msg == R.string.smth_wrong) it.plus("<br/><small>${e.javaClass.name}</small>") else it
+                    }, Html.FROM_HTML_MODE_COMPACT))
                     .setPositiveButton(R.string.got_it) {d, btn -> d.dismiss()}.create().apply {
                         setOnDismissListener { nd.show() }
                     }.show()
@@ -116,5 +122,5 @@ object Closet {
             }
         }
     }
-
+//
 }

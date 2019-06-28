@@ -18,7 +18,7 @@ android {
             minifyEnabled true
             shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-            applicationIdSuffix = 'poshapp'
+            applicationIdSuffix = 'poshmarket'
             versionNameSuffix = '-Maxeem'
         }
         debug {

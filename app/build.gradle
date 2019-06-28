@@ -5,6 +5,7 @@ apply plugin: 'kotlin-android'
 android {
     compileSdkVersion 29
     defaultConfig {
+        resConfigs "en"
         applicationId "maxeem.america"
         minSdkVersion 26
         targetSdkVersion 29

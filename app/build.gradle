@@ -22,6 +22,8 @@ android {
             versionNameSuffix = '-Maxeem'
         }
         debug {
+            minifyEnabled true
+            useProguard false
             applicationIdSuffix = 'debug'
             versionNameSuffix = '-debug'
         }

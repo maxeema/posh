@@ -23,25 +23,16 @@ object C { //Conf
     val MARKETS_ORDER = "home_a,kids,all,men,women".split(",")
     val MARKETS_JSON = "src/main/res/raw/markets.json"
     val ICONS_PATH = "src/main/res/mipmap-xxxhdpi"
-}
-//
-object Effects {
-    private val map = mapOf(
+    val ICONS_EFFECTS =  mapOf(
         "bouti_m" to ContrastFilter().apply{ brightness = .9f; contrast=1.2f },
         "makeup" to ContrastFilter().apply{ brightness = .85f; contrast=1.35f },
         "mater_w" to (CompoundFilter(PoshmarkModernFilter, PoshmarkModernFilter)),
-        setOf("petit_w") to (CompoundFilter(ContrastFilter().apply{ brightness = .9f; contrast=1.25f }, PoshmarkModernFilter)),
-        setOf("women","home_a") to (CompoundFilter(ContrastFilter().apply{ brightness = .8f; contrast=1.35f }, PoshmarkModernFilter)),
-        setOf("men","kids","gifts","luxur_m","plus","promd_w") to PoshmarkModernFilter
+        "petit_w" to (CompoundFilter(ContrastFilter().apply{ brightness = .9f; contrast=1.25f }, PoshmarkModernFilter)),
+        "women,home_a" to (CompoundFilter(ContrastFilter().apply{ brightness = .8f; contrast=1.35f }, PoshmarkModernFilter)),
+        "men,kids,gifts,luxur_m,plus,promd_w" to PoshmarkModernFilter
     )
-    val find : (id:String)->AbstractBufferedImageOp? = l@ { id ->
-        for (entry in map.filterKeys { it is Set<*> }.entries) with(entry as Map.Entry<Set<String>, AbstractBufferedImageOp>) {
-            if (key.contains(id))
-                return@l value
-        }
-        map.get(id)
-    }
 }
+//
 //
 println("- start")
 //
@@ -73,7 +64,7 @@ kotlin.run {
             jdmap.getValue(id).also { jdm-> JSONObject().also { jm ->
                 jout.get("markets").let{ it as JSONArray }.appendElement(jm.appendField("id", id).appendField("label", jdm.getAsString("short_display_name")))
                 C.ICONS_PATH.let{File(it, "market_$id.png")}.takeUnless{ it.length() > 1 }?.also { f->
-                    Utils.getIcon(jdm.getAsString("img_url_large"), f, Effects.find(id))}
+                    Utils.getIcon(jdm.getAsString("img_url_large"), f, Utils.iconEffect(id))}
                 JsonPath.compile("content.data.*.id").read<Collection<String>>(jp).forEach { dId: String ->
                     if (id == dId) return@forEach //skip the same market and department like "women" contains "women"
                     if (dId == "wholesale") return@forEach//Wholesale dept. isn't accessible by default for all users and I can't even try/open it
@@ -83,7 +74,7 @@ kotlin.run {
                         jm.run { get("departments") as JSONArray? ?: JSONArray().also { put("departments", it)} }
                             .appendElement(JSONObject().appendField(dId, jdd.getAsString("short_display_name")))
                         C.ICONS_PATH.let{File(it, "department_$dId.png")}.takeUnless{ it.length() > 1 }?.also { f->
-                            Utils.getIcon(jdd.getAsString("img_url_large"), f, Effects.find(dId))}
+                            Utils.getIcon(jdd.getAsString("img_url_large"), f, Utils.iconEffect(dId))}
                     }
                 }
             }}
@@ -97,6 +88,12 @@ kotlin.run {
 println("- end")
 //
 object Utils {
+    val iconEffect : (id:String)->AbstractBufferedImageOp? = l@ { id ->
+        for (entry in C.ICONS_EFFECTS.entries)
+            if (entry.key.split(",").contains(id))
+                return@l entry.value
+        null
+    }
     fun getIcon(url: String, to: File, effect:AbstractBufferedImageOp? = null) {
         if (effect != null) {
             print("-- Utils.getIcon - applying ${effect!!.javaClass.simpleName} on $url -> $to ...")

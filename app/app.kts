@@ -8,13 +8,15 @@ import com.jayway.jsonpath.JsonPath
 import com.jhlabs.image.*
 import net.minidev.json.*
 import net.minidev.json.parser.JSONParser
-import java.awt.image.BufferedImage
+import java.awt.image.*
 import java.io.File
 import java.net.URL
 import java.nio.charset.Charset
 import java.util.*
 import javax.imageio.ImageIO
 //
+//ImageUtils.testIconEffect("bouti_m", "department")
+//throw InterruptedException()
 //
 object C { //Conf
     val UTF_8 = Charset.forName("UTF-8")
@@ -24,19 +26,23 @@ object C { //Conf
     val MARKETS_JSON = "src/main/res/raw/markets.json"
     val ICONS_PATH = "src/main/res/mipmap-xxxhdpi"
     val ICONS_EFFECTS =  mapOf(
-        "bouti_m" to ContrastFilter().apply{ brightness = .9f; contrast=1.2f },
-        "makeup" to ContrastFilter().apply{ brightness = .85f; contrast=1.35f },
-        "mater_w" to (CompoundFilter(PoshmarkModernFilter, PoshmarkModernFilter)),
-        "petit_w" to (CompoundFilter(ContrastFilter().apply{ brightness = .9f; contrast=1.25f }, PoshmarkModernFilter)),
-        "women,home_a" to (CompoundFilter(ContrastFilter().apply{ brightness = .8f; contrast=1.35f }, PoshmarkModernFilter)),
-        "men,kids,gifts,luxur_m,plus,promd_w" to PoshmarkModernFilter
+        "bouti_m" to ContrastFilter().apply{ brightness = .85f; contrast=1.65f },
+        "activ_w" to CompoundFilter(ContrastFilter().apply{ brightness = 1f; contrast=1.3f }, RGBAdjustFilter(0f, 0.1f, .7f)),
+        "makeup" to CompoundFilter(ContrastFilter().apply{ brightness = .9f; contrast=1.3f }, RGBAdjustFilter(0f, 0f, .4f)),
+        "kicks_m" to CompoundFilter(ContrastFilter().apply{ brightness = .9f; contrast=1.1f }, RGBAdjustFilter(0f, 0f, .3f)),
+        "activ_k" to CompoundFilter(ContrastFilter().apply{ brightness = .9f; contrast=1.3f }, RGBAdjustFilter(0f, 0f, .6f)),
+        "activ_m" to CompoundFilter(ContrastFilter().apply{ brightness = 1f; contrast=1.2f }, RGBAdjustFilter(0f, .1f, .5f)),
+        "mater_w" to CompoundFilter(HSBAdjustFilter(.05f,0f,0f), CompoundFilter(ContrastFilter().apply{ brightness = 1.1f; contrast=1.2f }, RGBAdjustFilter(-.1f,-.1f,.5f))),
+        "men,petit_w" to CompoundFilter(ContrastFilter().apply{ brightness = .9f; contrast=1.25f }, PoshmarkModernFilter),
+        "men,women,home_a,luxur_m" to CompoundFilter(ContrastFilter().apply{ brightness = .8f; contrast=1.35f }, PoshmarkModernFilter),
+        "kids,gifts,plus,promd_w" to PoshmarkModernFilter
     )
 }
 //
 //
 println("- start")
 //
-fun JSONArray.appendElement(idx:Int, item:JSONObject) = run { add(idx, item) }
+fun JSONArray.appendElement(idx:Int, item:JSONObject) = apply { add(idx, item) }
 //
 kotlin.run {
     println("${C.EXPERIENCES_JSON} -> isFile: ${File(C.EXPERIENCES_JSON).isFile} - length: ${File(C.EXPERIENCES_JSON).length()}")
@@ -64,7 +70,7 @@ kotlin.run {
             jdmap.getValue(id).also { jdm-> JSONObject().also { jm ->
                 jout.get("markets").let{ it as JSONArray }.appendElement(jm.appendField("id", id).appendField("label", jdm.getAsString("short_display_name")))
                 C.ICONS_PATH.let{File(it, "market_$id.png")}.takeUnless{ it.length() > 1 }?.also { f->
-                    Utils.getIcon(jdm.getAsString("img_url_large"), f, Utils.iconEffect(id))}
+                    ImageUtils.pullIcon(id, jdm.getAsString("img_url_large"), f)}
                 JsonPath.compile("content.data.*.id").read<Collection<String>>(jp).forEach { dId: String ->
                     if (id == dId) return@forEach //skip the same market and department like "women" contains "women"
                     if (dId == "wholesale") return@forEach//Wholesale dept. isn't accessible by default for all users and I can't even try/open it
@@ -74,7 +80,7 @@ kotlin.run {
                         jm.run { get("departments") as JSONArray? ?: JSONArray().also { put("departments", it)} }
                             .appendElement(JSONObject().appendField(dId, jdd.getAsString("short_display_name")))
                         C.ICONS_PATH.let{File(it, "department_$dId.png")}.takeUnless{ it.length() > 1 }?.also { f->
-                            Utils.getIcon(jdd.getAsString("img_url_large"), f, Utils.iconEffect(dId))}
+                            ImageUtils.pullIcon(dId, jdd.getAsString("img_url_large"), f)}
                     }
                 }
             }}
@@ -88,30 +94,48 @@ kotlin.run {
 println("- end")
 //
 object Utils {
+    fun wgetAsText(url: String, to: File) = to.apply {
+        print("-- Utils.wgetAsText - $url -> $to ...")
+        writeText(URL(url).readText(C.UTF_8), C.UTF_8)
+        println(" completed -> file size - ${length()}")
+    }
+    fun wgetAsBinary(url: String, to: File) = to.apply {
+        print("-- Utils.wgetAsBinary - $url -> $to ...")
+        URL(url).openStream().copyTo(outputStream())
+        println(" completed -> file size - ${length()}")
+    }
+}
+object ImageUtils {
     val iconEffect : (id:String)->AbstractBufferedImageOp? = l@ { id ->
         for (entry in C.ICONS_EFFECTS.entries)
             if (entry.key.split(",").contains(id))
                 return@l entry.value
         null
     }
-    fun getIcon(url: String, to: File, effect:AbstractBufferedImageOp? = null) {
-        if (effect != null) {
-            print("-- Utils.getIcon - applying ${effect!!.javaClass.simpleName} on $url -> $to ...")
-            ImageIO.write(effect.filter(ImageIO.read(URL(url)), null), "png", to).takeUnless { it }?.apply { throw Exception("Image write error $url to $to") }
-            println(" completed -> file size - ${to.length()}")
-        } else {
-            Utils.wgetAsBinary(url, to)
+    fun pullIcon(id: String, url: String, to: File) = when (val effect = iconEffect(id)) {
+        null -> Utils.wgetAsBinary(url, to)
+        else -> to.apply {
+            print("-- Utils.pullIcon - applying ${effect.javaClass.simpleName} on $url -> $to ...")
+            ImageIO.write(ImageIO.read(URL(url)).run {
+                effect.filter(this, createDest(this))
+            }, "png", to).takeUnless { it }?.apply { throw Exception("Image write error $url to $to") }
+            println(" completed -> file size - ${length()}")
         }
     }
-    fun wgetAsText(url: String, to: File) = to.apply {
-        print("-- Utils.wgetAsText - $url -> $to ...")
-        writeText(URL(url).readText(C.UTF_8), C.UTF_8)
-        println(" completed -> file size - ${to.length()}")
+    fun createDest(src: BufferedImage) : BufferedImage {
+        val dstCM = ColorModel.getRGBdefault()
+        //work with DirectColorModel cuz src's may be IndexedColorModel which causes bad quality filter results
+        check(dstCM is DirectColorModel) { "we work with DirectColorModel and don't with $dstCM" }
+        return BufferedImage(dstCM, dstCM.createCompatibleWritableRaster(src.width, src.height),
+                dstCM.isAlphaPremultiplied(), null as java.util.Hashtable<*,*>?)
     }
-    fun wgetAsBinary(url: String, to: File) = to.apply {
-        print("-- Utils.wgetAsBinary - $url -> $to ...")
-        URL(url).openStream().copyTo(outputStream())
-        println(" completed -> file size - ${to.length()}")
+    fun testIconEffect(id:String, type:String) {
+        val file = File("app.kts.data", "$id.png")
+        check (file.length() > 1) { "empty input file: $file"}
+        println("\n - Test icon effect for $id - $type, src: $file")
+        ImageIO.write(ImageIO.read(file).run {
+            ImageUtils.iconEffect(id)!!.filter(this, ImageUtils.createDest(this))
+        }, "png", File(C.ICONS_PATH, "${type}_$id.png")).takeUnless { it }?.apply { throw Exception("Image write error") }
     }
 }
 //
@@ -160,7 +184,7 @@ open class PoshmarkFilter(val balanceArgs: Triple<Float,Float,Float>? = null,
         val dst = dest ?: run {
             val dstCM = src.colorModel
             BufferedImage(dstCM, dstCM.createCompatibleWritableRaster(width, height),
-                    dstCM.isAlphaPremultiplied(), null as java.util.Hashtable<*,*>?);
+                    dstCM.isAlphaPremultiplied(), null as java.util.Hashtable<*,*>?)
         }
         val dstRaster = dst.raster
         val inPixels = IntArray(width)

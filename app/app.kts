@@ -14,46 +14,33 @@ import java.net.URL
 import java.nio.charset.Charset
 import java.util.*
 import javax.imageio.ImageIO
-
 //
 //
-private object Conts {
+object C { //Conf
     val UTF_8 = Charset.forName("UTF-8")
+    val EXPERIENCES_URL = "https://poshmark.com/api/meta/experiences"
+    val EXPERIENCES_JSON = "app.kts.data/experiences.json"
+    val MARKETS_ORDER = "home_a,kids,all,men,women".split(",")
+    val MARKETS_JSON = "src/main/res/raw/markets.json"
+    val ICONS_PATH = "src/main/res/mipmap-xxxhdpi"
 }
-private object Experiences {
-    val url = URL("https://poshmark.com/api/meta/experiences")
-    val file = File("app.kts.data/experiences.json")
-}
-private object Markets {
-    val order = arrayOf("home_a", "kids", "all", "men", "women")
-    const val jsonFile = "src/main/res/raw/markets.json"
-    const val iconsPath = "src/main/res/mipmap-xxxhdpi"
-}
-private object Icons {
-    val effect : (id:String)->Pair<Img.Effect,Any?> = l@{ id ->
-        for (entry in effectToId.entries) if (entry.value.contains(id)) return@l entry.key to null
-        idToEffect.get(id)?.also {
-            if (it is Img.Effect) return@l it to null
-            return@l it as Pair<Img.Effect, Any>
+//
+object Effects {
+    private val map = mapOf(
+        "bouti_m" to ContrastFilter().apply{ brightness = .9f; contrast=1.2f },
+        "makeup" to ContrastFilter().apply{ brightness = .85f; contrast=1.35f },
+        "mater_w" to (CompoundFilter(PoshmarkModernFilter, PoshmarkModernFilter)),
+        setOf("petit_w") to (CompoundFilter(ContrastFilter().apply{ brightness = .9f; contrast=1.25f }, PoshmarkModernFilter)),
+        setOf("women","home_a") to (CompoundFilter(ContrastFilter().apply{ brightness = .8f; contrast=1.35f }, PoshmarkModernFilter)),
+        setOf("men","kids","gifts","luxur_m","plus","promd_w") to PoshmarkModernFilter
+    )
+    val find : (id:String)->AbstractBufferedImageOp? = l@ { id ->
+        for (entry in map.filterKeys { it is Set<*> }.entries) with(entry as Map.Entry<Set<String>, AbstractBufferedImageOp>) {
+            if (key.contains(id))
+                return@l value
         }
-        Img.Effect.NO to null
+        map.get(id)
     }
-    private val effectToId = mapOf(
-        Img.Effect.MODERN to setOf("luxur_k","gifts","luxur_m","petit_w","plus","promd_w")
-    )
-    private val idToEffect = mapOf(
-        "mater_w" to Img.Effect.RETRO,
-        "bouti_m" to (Img.Effect.Filter to ContrastFilter().apply{ brightness = .9f; contrast=1.2f }),
-        "makeup" to (Img.Effect.Filter to ContrastFilter().apply{ brightness = 0.85f; contrast=1.35f }),
-        "activ_k" to (Img.Effect.Filter to CompoundFilter(
-                HSBAdjustFilter().apply{ sFactor = 0.1f }, ContrastFilter().apply{ brightness = 0.8f; contrast=1.15f }))
-    )
-//    fun test() {
-//        val f = "/home/max/Downloads/bouti_m.png"; ImageIO.write(CompoundFilter(
-//            HSBAdjustFilter().apply { sFactor = 0.1f }, ContrastFilter().apply { brightness = 0.9f; contrast = 1.2f }
-//        ).filter(ImageIO.read(File(f)), null), "png", File("$f-new"))
-//        kotlin.checkNotNull(null) { "interrupt here" }
-//    }
 }
 //
 println("- start")
@@ -61,10 +48,10 @@ println("- start")
 fun JSONArray.appendElement(idx:Int, item:JSONObject) = run { add(idx, item) }
 //
 kotlin.run {
-    println("${Experiences.file} -> isFile: ${Experiences.file.isFile} - length: ${Experiences.file.length()}")
-    Experiences.file.run {
-        takeUnless {length() > 1}?.apply { Utils.wgetAsText(Experiences.url, this) }
-        JSONParser(JSONParser.MODE_PERMISSIVE).parse(readText(Conts.UTF_8))
+    println("${C.EXPERIENCES_JSON} -> isFile: ${File(C.EXPERIENCES_JSON).isFile} - length: ${File(C.EXPERIENCES_JSON).length()}")
+    File(C.EXPERIENCES_JSON).run {
+        takeUnless {length() > 1}?.apply { Utils.wgetAsText(C.EXPERIENCES_URL, this) }
+        JSONParser(JSONParser.MODE_PERMISSIVE).parse(readText(C.UTF_8))
     }.also { j ->
         val jdmap = mutableMapOf<String, JSONObject>().apply {
             JsonPath.compile("data.*").read<List<JSONObject>>(j)
@@ -80,13 +67,13 @@ kotlin.run {
                     if (it == "home") "home_a" else it
                 }, jp)
             }
-        }.toSortedMap(Comparator{ id1,id2 -> Markets.order.indexOf(id1).compareTo(Markets.order.indexOf(id2)) }).forEach { entry ->
+        }.toSortedMap(Comparator{ id1,id2 -> C.MARKETS_ORDER.indexOf(id1).compareTo(C.MARKETS_ORDER.indexOf(id2)) }).forEach { entry ->
             val (id, jp) = entry
             println("market id: " + id)
             jdmap.getValue(id).also { jdm-> JSONObject().also { jm ->
                 jout.get("markets").let{ it as JSONArray }.appendElement(jm.appendField("id", id).appendField("label", jdm.getAsString("short_display_name")))
-                Markets.iconsPath.let{File(it, "market_$id.png")}.takeUnless{ it.length() > 1 }?.also { f->
-                    Icons.effect(id).also { val (effect, arg) = it; effect.apply(arg, URL(jdm.getAsString("img_url_large")), f) }}
+                C.ICONS_PATH.let{File(it, "market_$id.png")}.takeUnless{ it.length() > 1 }?.also { f->
+                    Utils.getIcon(jdm.getAsString("img_url_large"), f, Effects.find(id))}
                 JsonPath.compile("content.data.*.id").read<Collection<String>>(jp).forEach { dId: String ->
                     if (id == dId) return@forEach //skip the same market and department like "women" contains "women"
                     if (dId == "wholesale") return@forEach//Wholesale dept. isn't accessible by default for all users and I can't even try/open it
@@ -95,14 +82,14 @@ kotlin.run {
                     jdmap.getValue(dId).also { jdd ->
                         jm.run { get("departments") as JSONArray? ?: JSONArray().also { put("departments", it)} }
                             .appendElement(JSONObject().appendField(dId, jdd.getAsString("short_display_name")))
-                        Markets.iconsPath.let{File(it, "department_$dId.png")}.takeUnless{ it.length() > 1 }?.also { f->
-                            Icons.effect(dId).also { val (effect, arg) = it; effect.apply(arg, URL(jdd.getAsString("img_url_large")), f) }}
+                        C.ICONS_PATH.let{File(it, "department_$dId.png")}.takeUnless{ it.length() > 1 }?.also { f->
+                            Utils.getIcon(jdd.getAsString("img_url_large"), f, Effects.find(dId))}
                     }
                 }
             }}
         }
         println("jout: " + jout)
-        Markets.jsonFile.let { File(it)}.writer(Conts.UTF_8).use { jout.writeJSONString(it) }
+        C.MARKETS_JSON.let{ File(it) }.writer(C.UTF_8).use { jout.writeJSONString(it) }
     }
 }
 //
@@ -110,77 +97,48 @@ kotlin.run {
 println("- end")
 //
 object Utils {
-    fun wgetAsText(url: URL, to: File) = to.apply {
-        print("-- Utils.wgetAsText - $url -> $to ...")
-        writeText(url.readText(Conts.UTF_8), Conts.UTF_8)
-        println(" completed -> file size - ${to.length()}")
-    }
-    fun wgetAsBinary(url: URL, to: File) = to.apply {
-        print("-- Utils.wgetAsBinary - $url -> $to ...")
-        url.openStream().copyTo(outputStream())
-        println(" completed -> file size - ${to.length()}")
-    }
-}
-//
-//
-object Img {
-    enum class Effect(private val action: (arg:Any?, src:BufferedImage, dst:BufferedImage?) -> BufferedImage) {
-        //com.jhlabs-filters
-        Filter({ arg,src,dst-> val o = arg as AbstractBufferedImageOp
-//            println(" Img.Effect.Filter: ${arg.javaClass.simpleName}")
-            o.filter(src, dst)
-        }),
-        //Poshmark's effects
-        MODERN({ arg,src, dst ->
-            with (PoshmarkFilter()) {
-                filter(src, dst) { x,y,pxl ->
-                    balanceColor(pxl, Triple(1.0f, 1.0f, 1.4f)).let {
-                        adjustImage(it, Triple(1.0f, 1.0f, 1.2f)) }
-                }
-            }
-        }),
-        CHIC({ arg,src,dst ->
-            with (PoshmarkFilter()) {
-                filter(src, dst) { x, y, pxl ->
-                    balanceColor(pxl, Triple(1.2f, 1.0f, 0.7f)).let {
-                        adjustImage(it, Triple(1.2f, 1.0f, 0.7f))
-                    }
-                }
-            }
-        }),
-        RETRO({ arg,src,dst ->
-            with (PoshmarkFilter()) {
-                filter(src, dst) { x, y, pxl -> balanceColor(pxl, Triple(1.4f, 1.3f, 1.0f)) }
-            }
-        }),
-        STREET({ arg,src, dst ->
-            with (PoshmarkFilter()) {
-                filter(src, dst) { x, y, pxl -> adjustImage(pxl, Triple(1.5f, 1.0f, 1.4f)) }
-            }
-        }),
-////        VINTAGE({ arg,src, dst ->
-//            //TODO
-////        }),
-        //no
-        NO({ arg,src,dst ->
-            throw Exception("Impossible is NOT possible")
-        });
-        //@param what - URL, File, InputStream
-        public fun apply(arg:Any?, what: URL, to: File) {
-            if (this == NO) {
-                Utils.wgetAsBinary(what, to)
-            } else {
-                print("-- Img.Effect.apply ${if (this==Filter) arg!!.javaClass.simpleName else this} on $what -> $to ...")
-                ImageIO.write(this.action(arg,ImageIO.read(what), null), "png", to).takeUnless { it }?.apply { throw Exception("Image write error $what to $to") }
-                println(" completed -> file size - ${to.length()}")
-            }
+    fun getIcon(url: String, to: File, effect:AbstractBufferedImageOp? = null) {
+        if (effect != null) {
+            print("-- Utils.getIcon - applying ${effect!!.javaClass.simpleName} on $url -> $to ...")
+            ImageIO.write(effect.filter(ImageIO.read(URL(url)), null), "png", to).takeUnless { it }?.apply { throw Exception("Image write error $url to $to") }
+            println(" completed -> file size - ${to.length()}")
+        } else {
+            Utils.wgetAsBinary(url, to)
         }
-        override fun toString() = name
     }
-    //
+    fun wgetAsText(url: String, to: File) = to.apply {
+        print("-- Utils.wgetAsText - $url -> $to ...")
+        writeText(URL(url).readText(C.UTF_8), C.UTF_8)
+        println(" completed -> file size - ${to.length()}")
+    }
+    fun wgetAsBinary(url: String, to: File) = to.apply {
+        print("-- Utils.wgetAsBinary - $url -> $to ...")
+        URL(url).openStream().copyTo(outputStream())
+        println(" completed -> file size - ${to.length()}")
+    }
 }
-class PoshmarkFilter {
-    fun adjustImage(pxl: Int, args: Triple<Float, Float, Float>): Int {
+//
+//
+object PoshmarkModernFilter : PoshmarkFilter(Triple(1.0f, 1.0f, 1.4f), Triple(1.0f, 1.0f, 1.2f))
+object PoshmarkChicFilter : PoshmarkFilter(Triple(1.2f, 1.0f, 0.7f), Triple(1.2f, 1.0f, 0.7f))
+object PoshmarkStreetFilter : PoshmarkFilter(adjustArgs=Triple(1.5f, 1.0f, 1.4f))
+object PoshmarkRetroFilter : PoshmarkFilter(Triple(1.4f, 1.3f, 1.0f))
+object PoshmarkVintageFilter: PoshmarkFilter(null, null) {
+    init { TODO("merge and implement") }
+}
+open class PoshmarkFilter(val balanceArgs: Triple<Float,Float,Float>? = null,
+             val adjustArgs:Triple<Float,Float,Float>? = null) : AbstractBufferedImageOp() {
+    init {
+        require(balanceArgs != null || adjustArgs != null) {"must be specified at least one effect"}
+    }
+    override fun filter(src:BufferedImage, dst:BufferedImage?) = when {
+        balanceArgs != null && adjustArgs != null
+            -> filter(src, dst) { x, y, pxl -> adjustImage(balanceColor(pxl, balanceArgs), adjustArgs) }
+        balanceArgs != null -> filter(src, dst) { x, y, pxl -> balanceColor(pxl, balanceArgs) }
+        adjustArgs != null  -> filter(src, dst) { x, y, pxl -> adjustImage(pxl, adjustArgs) }
+        else -> throw IllegalStateException()
+    }
+    private fun adjustImage(pxl: Int, args: Triple<Float, Float, Float>): Int {
         val (f1, f2, f3) = args
         val r = r(pxl).times(f3); val g = g(pxl).times(f3); val b = b(pxl).times(f3)
         val f4 = 0.2125.times(r).plus(0.7154.times(g)).plus(0.0721.times(b))
@@ -188,7 +146,7 @@ class PoshmarkFilter {
                 g.minus(f4).times(f2).plus(f4).minus(0.5).times(f1).plus(0.5).toInt(),
                     b.minus(f4).times(f2).plus(f4).minus(0.5).times(f1).plus(0.5).toInt())
     }
-    fun balanceColor(pxl: Int, args: Triple<Float, Float, Float>) =
+    private fun balanceColor(pxl: Int, args: Triple<Float, Float, Float>) =
             argb(pxl.ushr(24), r(pxl).plus(1).times(args.first).toInt(),
                     g(pxl).plus(1).times(args.second).toInt(),
                         b(pxl).plus(1).times(args.third).toInt())
@@ -199,7 +157,7 @@ class PoshmarkFilter {
             a.shl(24).or(validate(r).shl(16)).or(validate(g).shl(8)).or(validate(b))
     private val validate = { i:Int -> when {i in 0..255 -> i; i<0 -> 0; else -> 255 } }
     //
-    fun filter(src: BufferedImage, dest: BufferedImage?, filterRGB:(x:Int, y:Int, pxl:Int)->Int) : BufferedImage {
+    private fun filter(src: BufferedImage, dest: BufferedImage?, filterRGB:(x:Int, y:Int, pxl:Int)->Int) : BufferedImage {
         val (width,height) = src.width to src.height
         val (type, srcRaster) = src.type to src.raster
         val dst = dest ?: run {
@@ -212,12 +170,12 @@ class PoshmarkFilter {
         for (y in 0 until height) {
             if (type == 2) {
                 srcRaster.getDataElements(0, y, width, 1, inPixels)
-                for (x in 0 until width)
+                for (x in inPixels.indices)
                     inPixels[x] = filterRGB(x, y, inPixels[x])
                 dstRaster.setDataElements(0, y, width, 1, inPixels)
             } else {
                 src.getRGB(0, y, width, 1, inPixels, 0, width)
-                for (x in 0 until width)
+                for (x in 0 until width) // same as (x in inPixels.indices)
                     inPixels[x] = filterRGB(x, y, inPixels[x])
                 dst.setRGB(0, y, width, 1, inPixels, 0, width)
             }

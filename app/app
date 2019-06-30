@@ -1,0 +1,2 @@
+#!/bin/bash
+kotlinc -cp app.kts.data/com.jhlabs-filters-2.0.235.jar:app.kts.data/slf4j-api-1.7.25.jar:app.kts.data/json-smart-2.3.jar:app.kts.data/json-path-2.4.0.jar -script app.kts

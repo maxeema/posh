@@ -24,8 +24,8 @@ object C { //Conf
     val EXPERIENCES_JSON = "app.kts.data/experiences.json"
     val MARKETS_ORDER = "home_a,kids,all,men,women".split(",")
     val MARKETS_JSON = "src/main/res/raw/markets.json"
-    val ICONS_SRC_PATH = "app.kts.data/icons"
-    val ICONS_DST_PATH = "src/main/res/mipmap"
+    val ICONS_SRC = "app.kts.data/icons"
+    val ICONS_DST = "src/main/res/mipmap"
     val ICON_SIZES = mapOf("xxxhdpi" to 192, "xxhdpi" to 144, "xhdpi" to 96, "hdpi" to 72, "mdpi" to 48)
     val ICONS_EFFECTS =  mapOf(
         "bouti_m" to ContrastFilter().apply{ brightness = .85f; contrast=1.65f },
@@ -113,14 +113,12 @@ object ImageUtils {
         null
     }
     fun pullIcon(id: String, type: String, url: String) {
-        check(type in listOf("market", "department")) { " wrong type - $type"}
-        var updated = false
+        check(type in listOf("market", "department")) { "wrong type - $type"}
         //get
-        var src = File(C.ICONS_SRC_PATH, "$id.png")
-        src.takeUnless { it.length() > 1 }?.also { to ->
-            Utils.wgetAsBinary(url, to)
-            updated = true
-        }
+        var src = File(C.ICONS_SRC, "$id-original.png")
+        if (src.length() > 1)
+            return
+        Utils.wgetAsBinary(url, src)
         //check
         var img = ImageIO.read(src).apply {
             println(" - orignal size $width x $height")
@@ -128,23 +126,26 @@ object ImageUtils {
             require(width in 186..192 && height in 186..192) { "now, we have to do something with new icon sizes =)" }
         }
         //effect
-        iconEffect(id)?.also { effect -> File(C.ICONS_SRC_PATH, "$id-filtered.png").takeUnless { !updated && it.length() > 1 }?.also { to ->
-            println(" - applying ... ${effect.javaClass.simpleName} on $to")
-            ImageIO.write(effect.filter(img, createDest(img)).apply {
-                println(" - set 'src' to $to and update 'img' ref. to the filtered one")
-                img = this
-                src = to
-                updated = true
-            }, "png", to).takeUnless { it }?.apply { throw Exception("Image write error $url to $to") }
-        }}
+        File(C.ICONS_SRC, "$id-filtered.png").apply {
+            delete()
+            iconEffect(id)?.also { effect ->
+                println(" ... applying ${effect.javaClass.simpleName} on $src")
+                src = this
+                ImageIO.write(effect.filter(img, createDest(img)).apply {
+                    img = this
+                    println(" - set 'src' to $src and update 'img' ref. to the filtered one")
+                }, "png", src).takeUnless { it }?.apply { throw Exception("Image write error $url to $src") }
+            }
+        }
         //scale
-        C.ICON_SIZES.forEach { dpi, size -> File("${C.ICONS_DST_PATH}-$dpi", "${type}_$id.png").takeUnless { !updated && it.length() > 1 }?.also { to ->
+        C.ICON_SIZES.forEach { dpi, size -> File("${C.ICONS_DST}-$dpi", "${type}_$id.png").apply {
             if ("xxxhdpi" == dpi) {
-                println(" - copying ... $src: $to")
-                src.copyTo(to, true)
+                println(" ... copying $src to $this")
+                src.copyTo(this, true)
             } else {
-                println(" - scaling ... $dpi, $size: $to")
-                ImageIO.write(BicubicScaleFilter(size, size).filter(img, createDest(img, size to size)), "png", to).takeUnless { it }?.apply { throw Exception("Image write error $to") }
+                println(" ... scaling $dpi, $size $this")
+                ImageIO.write(BicubicScaleFilter(size, size).filter(img, createDest(img, size to size)), "png", this)
+                    .takeUnless { it }?.apply { throw Exception("Image write error $this") }
             }
         }}
     }
@@ -157,7 +158,7 @@ object ImageUtils {
                 dstCM.isAlphaPremultiplied(), null as java.util.Hashtable<*,*>?)
     }
     fun testIconEffect(id:String, type:String) {
-        val file = File(C.ICONS_SRC_PATH, "$id.png")
+        val file = File(C.ICONS_SRC, "$id.png")
         check (file.length() > 1) { "empty input file: $file"}
         println("\n - Test icon effect for $id - $type, src: $file")
         ImageIO.write(ImageIO.read(file).run {

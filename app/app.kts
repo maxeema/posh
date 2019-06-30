@@ -15,7 +15,7 @@ import java.nio.charset.Charset
 import java.util.*
 import javax.imageio.ImageIO
 //
-//ImageUtils.testIconEffect("home_a", "market")
+//ImageUtils.testIconEffect("activ_w", "department")
 //throw InterruptedException()
 //
 object C { //Conf
@@ -29,9 +29,9 @@ object C { //Conf
     val ICON_SIZES = mapOf("xxxhdpi" to 192, "xxhdpi" to 144, "xhdpi" to 96, "hdpi" to 72, "mdpi" to 48)
     val ICONS_EFFECTS =  mapOf(
         "bouti_m" to ContrastFilter().apply{ brightness = .85f; contrast=1.65f },
-        "activ_w" to CompoundFilter(ContrastFilter().apply{ brightness = 1f; contrast=1.3f }, RGBAdjustFilter(0f, 0.1f, .7f)),
-        "makeup" to CompoundFilter(ContrastFilter().apply{ brightness = .9f; contrast=1.3f }, RGBAdjustFilter(0f, 0f, .4f)),
-        "kicks_m" to CompoundFilter(ContrastFilter().apply{ brightness = .9f; contrast=1.1f }, RGBAdjustFilter(0f, 0f, .3f)),
+        "activ_w" to CompoundFilter(FlipFilter(FlipFilter.FLIP_H),CompoundFilter(ContrastFilter().apply{ brightness = 1f; contrast=1.3f }, RGBAdjustFilter(0f, 0.1f, .7f))),
+        "makeup" to CompoundFilter(FlipFilter(FlipFilter.FLIP_H), CompoundFilter(ContrastFilter().apply{ brightness = .9f; contrast=1.3f }, RGBAdjustFilter(0f, 0f, .4f))),
+        "kicks_m" to CompoundFilter(ContrastFilter().apply{ brightness = 1f; contrast=1.1f }, RGBAdjustFilter(0f, 0f, .3f)),
         "activ_k" to CompoundFilter(ContrastFilter().apply{ brightness = .9f; contrast=1.3f }, RGBAdjustFilter(0f, 0f, .6f)),
         "activ_m" to CompoundFilter(ContrastFilter().apply{ brightness = 1f; contrast=1.2f }, RGBAdjustFilter(0f, .1f, .5f)),
         "mater_w" to CompoundFilter(HSBAdjustFilter(.05f,0f,0f), CompoundFilter(ContrastFilter().apply{ brightness = 1.1f; contrast=1.2f }, RGBAdjustFilter(-.1f,-.1f,.5f))),
@@ -158,12 +158,12 @@ object ImageUtils {
                 dstCM.isAlphaPremultiplied(), null as java.util.Hashtable<*,*>?)
     }
     fun testIconEffect(id:String, type:String) {
-        val file = File(C.ICONS_SRC, "$id.png")
+        val file = File(C.ICONS_SRC, "$id-original.png")
         check (file.length() > 1) { "empty input file: $file"}
         println("\n - Test icon effect for $id - $type, src: $file")
         ImageIO.write(ImageIO.read(file).run {
             ImageUtils.iconEffect(id)!!.filter(this, ImageUtils.createDest(this))
-        }, "png", File("${type}_$id.png").apply {
+        }, "png", File("$id-filtered.png").apply {
             println(" - writing to ${this.absolutePath}")
         }).takeUnless { it }?.apply { throw Exception("Image write error") }
     }

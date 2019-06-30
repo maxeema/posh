@@ -15,7 +15,7 @@ import java.nio.charset.Charset
 import java.util.*
 import javax.imageio.ImageIO
 //
-//ImageUtils.testIconEffect("bouti_m", "department")
+//ImageUtils.testIconEffect("home_a", "market")
 //throw InterruptedException()
 //
 object C { //Conf
@@ -24,7 +24,9 @@ object C { //Conf
     val EXPERIENCES_JSON = "app.kts.data/experiences.json"
     val MARKETS_ORDER = "home_a,kids,all,men,women".split(",")
     val MARKETS_JSON = "src/main/res/raw/markets.json"
-    val ICONS_PATH = "src/main/res/mipmap-xxxhdpi"
+    val ICONS_SRC_PATH = "app.kts.data/icons"
+    val ICONS_DST_PATH = "src/main/res/mipmap"
+    val ICON_SIZES = mapOf("xxxhdpi" to 192, "xxhdpi" to 144, "xhdpi" to 96, "hdpi" to 72, "mdpi" to 48)
     val ICONS_EFFECTS =  mapOf(
         "bouti_m" to ContrastFilter().apply{ brightness = .85f; contrast=1.65f },
         "activ_w" to CompoundFilter(ContrastFilter().apply{ brightness = 1f; contrast=1.3f }, RGBAdjustFilter(0f, 0.1f, .7f)),
@@ -69,8 +71,7 @@ kotlin.run {
             println("market id: " + id)
             jdmap.getValue(id).also { jdm-> JSONObject().also { jm ->
                 jout.get("markets").let{ it as JSONArray }.appendElement(jm.appendField("id", id).appendField("label", jdm.getAsString("short_display_name")))
-                C.ICONS_PATH.let{File(it, "market_$id.png")}.takeUnless{ it.length() > 1 }?.also { f->
-                    ImageUtils.pullIcon(id, jdm.getAsString("img_url_large"), f)}
+                ImageUtils.pullIcon(id, "market", jdm.getAsString("img_url_large"))
                 JsonPath.compile("content.data.*.id").read<Collection<String>>(jp).forEach { dId: String ->
                     if (id == dId) return@forEach //skip the same market and department like "women" contains "women"
                     if (dId == "wholesale") return@forEach//Wholesale dept. isn't accessible by default for all users and I can't even try/open it
@@ -79,8 +80,7 @@ kotlin.run {
                     jdmap.getValue(dId).also { jdd ->
                         jm.run { get("departments") as JSONArray? ?: JSONArray().also { put("departments", it)} }
                             .appendElement(JSONObject().appendField(dId, jdd.getAsString("short_display_name")))
-                        C.ICONS_PATH.let{File(it, "department_$dId.png")}.takeUnless{ it.length() > 1 }?.also { f->
-                            ImageUtils.pullIcon(dId, jdd.getAsString("img_url_large"), f)}
+                        ImageUtils.pullIcon(dId, "department", jdd.getAsString("img_url_large"))
                     }
                 }
             }}
@@ -112,30 +112,59 @@ object ImageUtils {
                 return@l entry.value
         null
     }
-    fun pullIcon(id: String, url: String, to: File) = when (val effect = iconEffect(id)) {
-        null -> Utils.wgetAsBinary(url, to)
-        else -> to.apply {
-            print("-- Utils.pullIcon - applying ${effect.javaClass.simpleName} on $url -> $to ...")
-            ImageIO.write(ImageIO.read(URL(url)).run {
-                effect.filter(this, createDest(this))
-            }, "png", to).takeUnless { it }?.apply { throw Exception("Image write error $url to $to") }
-            println(" completed -> file size - ${length()}")
+    fun pullIcon(id: String, type: String, url: String) {
+        check(type in listOf("market", "department")) { " wrong type - $type"}
+        var updated = false
+        //get
+        var src = File(C.ICONS_SRC_PATH, "$id.png")
+        src.takeUnless { it.length() > 1 }?.also { to ->
+            Utils.wgetAsBinary(url, to)
+            updated = true
         }
+        //check
+        var img = ImageIO.read(src).apply {
+            println(" - orignal size $width x $height")
+            //now Poshmark's icons is 186px which is very close 192px (xxxhdpi), so we use them as xxxhdpi
+            require(width in 186..192 && height in 186..192) { "now, we have to do something with new icon sizes =)" }
+        }
+        //effect
+        iconEffect(id)?.also { effect -> File(C.ICONS_SRC_PATH, "$id-filtered.png").takeUnless { !updated && it.length() > 1 }?.also { to ->
+            println(" - applying ... ${effect.javaClass.simpleName} on $to")
+            ImageIO.write(effect.filter(img, createDest(img)).apply {
+                println(" - set 'src' to $to and update 'img' ref. to the filtered one")
+                img = this
+                src = to
+                updated = true
+            }, "png", to).takeUnless { it }?.apply { throw Exception("Image write error $url to $to") }
+        }}
+        //scale
+        C.ICON_SIZES.forEach { dpi, size -> File("${C.ICONS_DST_PATH}-$dpi", "${type}_$id.png").takeUnless { !updated && it.length() > 1 }?.also { to ->
+            if ("xxxhdpi" == dpi) {
+                println(" - copying ... $src: $to")
+                src.copyTo(to, true)
+            } else {
+                println(" - scaling ... $dpi, $size: $to")
+                ImageIO.write(BicubicScaleFilter(size, size).filter(img, createDest(img, size to size)), "png", to).takeUnless { it }?.apply { throw Exception("Image write error $to") }
+            }
+        }}
     }
-    fun createDest(src: BufferedImage) : BufferedImage {
+    fun createDest(src: BufferedImage, size:Pair<Int, Int>? = null) : BufferedImage {
         val dstCM = ColorModel.getRGBdefault()
         //work with DirectColorModel cuz src's may be IndexedColorModel which causes bad quality filter results
         check(dstCM is DirectColorModel) { "we work with DirectColorModel and don't with $dstCM" }
-        return BufferedImage(dstCM, dstCM.createCompatibleWritableRaster(src.width, src.height),
+        val (width, height) = if (size == null) src.width to src.height else size
+        return BufferedImage(dstCM, dstCM.createCompatibleWritableRaster(width, height),
                 dstCM.isAlphaPremultiplied(), null as java.util.Hashtable<*,*>?)
     }
     fun testIconEffect(id:String, type:String) {
-        val file = File("app.kts.data", "$id.png")
+        val file = File(C.ICONS_SRC_PATH, "$id.png")
         check (file.length() > 1) { "empty input file: $file"}
         println("\n - Test icon effect for $id - $type, src: $file")
         ImageIO.write(ImageIO.read(file).run {
             ImageUtils.iconEffect(id)!!.filter(this, ImageUtils.createDest(this))
-        }, "png", File(C.ICONS_PATH, "${type}_$id.png")).takeUnless { it }?.apply { throw Exception("Image write error") }
+        }, "png", File("${type}_$id.png").apply {
+            println(" - writing to ${this.absolutePath}")
+        }).takeUnless { it }?.apply { throw Exception("Image write error") }
     }
 }
 //
@@ -154,9 +183,9 @@ open class PoshmarkFilter(val balanceArgs: Triple<Float,Float,Float>? = null,
     }
     override fun filter(src:BufferedImage, dst:BufferedImage?) = when {
         balanceArgs != null && adjustArgs != null
-            -> filter(src, dst) { x, y, pxl -> adjustImage(balanceColor(pxl, balanceArgs), adjustArgs) }
-        balanceArgs != null -> filter(src, dst) { x, y, pxl -> balanceColor(pxl, balanceArgs) }
-        adjustArgs != null  -> filter(src, dst) { x, y, pxl -> adjustImage(pxl, adjustArgs) }
+            -> filter(src, dst) { _, _, pxl -> adjustImage(balanceColor(pxl, balanceArgs), adjustArgs) }
+        balanceArgs != null -> filter(src, dst) { _, _, pxl -> balanceColor(pxl, balanceArgs) }
+        adjustArgs != null  -> filter(src, dst) { _, _, pxl -> adjustImage(pxl, adjustArgs) }
         else -> throw IllegalStateException()
     }
     private fun adjustImage(pxl: Int, args: Triple<Float, Float, Float>): Int {

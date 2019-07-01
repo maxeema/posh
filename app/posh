@@ -1,0 +1,43 @@
+. ~/.bashrc
+#
+cd _posh
+#
+RES="../src/main/res"
+CP=`ls -m *jar`
+#
+_CLEAR=(
+ "icons/*" "experiences.json"
+ "$RES/raw/markets.json" "$RES/mipmap-*/{market_,department_}*"
+)
+#
+function clear() {
+ echo "- clear"
+ for i in ${CLEAR[@]}; do echo "  ... $i";
+# rm -rf /tmp/$i;
+ done
+}
+
+function build() {
+ echo "- build"
+ echo "  ... executing app.kts"
+ kotlinc -verbose -cp ${CP//[ ,]?/:} -script app.kts
+}
+
+function rebuild() {
+  clear
+  build
+}
+#
+if [ ! $1 ]; then
+  build
+  exit 0
+fi
+#
+case $1 in
+    clear | build | rebuild )
+        eval $1;
+        exit 0;
+    ;;
+    * ) echo "usage: #$0 clear | build* | rebuild"
+        exit 1
+esac

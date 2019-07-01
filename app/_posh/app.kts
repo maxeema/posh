@@ -1,7 +1,6 @@
 //
 //
 //https://www.baeldung.com/guide-to-jayway-jsonpath
-//kotlinc -cp app.kts.data/com.jhlabs-filters-2.0.235.jar:app.kts.data/slf4j-api-1.7.25.jar:app.kts.data/json-smart-2.3.jar:app.kts.data/json-path-2.4.0.jar -script app.kts
 //
 //
 import com.jayway.jsonpath.JsonPath
@@ -21,11 +20,11 @@ import javax.imageio.ImageIO
 object C { //Conf
     val UTF_8 = Charset.forName("UTF-8")
     val EXPERIENCES_URL = "https://poshmark.com/api/meta/experiences"
-    val EXPERIENCES_JSON = "app.kts.data/experiences.json"
+    val EXPERIENCES_JSON = "experiences.json"
     val MARKETS_ORDER = "home_a,kids,all,men,women".split(",")
-    val MARKETS_JSON = "src/main/res/raw/markets.json"
-    val ICONS_SRC = "app.kts.data/icons"
-    val ICONS_DST = "src/main/res/mipmap"
+    val MARKETS_JSON = "../src/main/res/raw/markets.json"
+    val ICONS_SRC = "icons"
+    val ICONS_DST = "../src/main/res/mipmap"
     val ICON_SIZES = mapOf("xxxhdpi" to 192, "xxhdpi" to 144, "xhdpi" to 96, "hdpi" to 72, "mdpi" to 48)
     val ICONS_EFFECTS = mapOf(
         "gifts" to CompoundFilter(ContrastFilter().apply{ brightness = 1.25f; contrast=1.4f }, RGBAdjustFilter(.1f, 0f, .1f)),

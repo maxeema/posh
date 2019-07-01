@@ -9,11 +9,11 @@
         <com.google.android.material.button.MaterialButton android:text="@string/closet"
             android:layout_width="wrap_content" android:layout_height="wrap_content"
             android:layout_marginHorizontal="10dp" android:layout_marginTop="10dp"
-            android:layout_alignParentRight="true"
+            android:layout_alignParentEnd="true"
             android:onClick="addCloset"/>
     </RelativeLayout>
     <androidx.core.widget.NestedScrollView
-        android:layout_above="@id/tabs" android:layout_below="@id/header"
+        android:layout_above="@id/footer" android:layout_below="@id/header"
         android:layout_width="match_parent" android:layout_height="match_parent"
         android:paddingVertical="10dp" android:fillViewport="true"
         android:requiresFadingEdge="vertical" android:fadingEdgeLength="45dp">
@@ -23,8 +23,14 @@
                 android:gravity="center" android:layout_gravity="center"/>
         </FrameLayout>
     </androidx.core.widget.NestedScrollView>
-    <com.google.android.material.chip.ChipGroup android:id="@+id/tabs"
-        app:singleLine="true" android:paddingVertical="5dp"
-        android:layout_centerHorizontal="true" android:layout_alignParentBottom="true"
-        android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+    <HorizontalScrollView android:id="@+id/footer" android:layout_alignParentBottom="true"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:requiresFadingEdge="horizontal" android:fadingEdgeLength="35dp"
+        android:fillViewport="true">
+        <FrameLayout android:layout_width="wrap_content" android:layout_height="wrap_content">
+            <com.google.android.material.chip.ChipGroup android:id="@+id/tabs"
+                app:singleLine="true" android:paddingVertical="5dp" android:layout_gravity="center"
+                android:layout_width="wrap_content" android:layout_height="wrap_content" />
+        </FrameLayout>
+    </HorizontalScrollView>
 </RelativeLayout>

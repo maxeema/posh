@@ -15,7 +15,7 @@ import java.nio.charset.Charset
 import java.util.*
 import javax.imageio.ImageIO
 //
-//ImageUtils.testIconEffect("kicks_m", "department")
+//ImageUtils.testIconEffect("gifts", "department")
 //throw InterruptedException()
 //
 object C { //Conf
@@ -27,18 +27,25 @@ object C { //Conf
     val ICONS_SRC = "app.kts.data/icons"
     val ICONS_DST = "src/main/res/mipmap"
     val ICON_SIZES = mapOf("xxxhdpi" to 192, "xxhdpi" to 144, "xhdpi" to 96, "hdpi" to 72, "mdpi" to 48)
-    val ICONS_EFFECTS =  mapOf(
-        "bouti_m" to ContrastFilter().apply{ brightness = .85f; contrast=1.65f },
-        "activ_w" to CompoundFilter(ContrastFilter().apply{ brightness = 1f; contrast=1.3f }, RGBAdjustFilter(0f, 0.1f, .7f)),
-        "makeup" to CompoundFilter(FlipFilter(FlipFilter.FLIP_H), CompoundFilter(ContrastFilter().apply{ brightness = .9f; contrast=1.4f }, RGBAdjustFilter(0f, 0f, .5f))),
-        "kicks_m" to CompoundFilter(FlipFilter(FlipFilter.FLIP_H), CompoundFilter(ContrastFilter().apply{ brightness = 1f; contrast=1.1f }, RGBAdjustFilter(0f, 0f, .3f))),
+    val ICONS_EFFECTS = mapOf(
+        "gifts" to CompoundFilter(ContrastFilter().apply{ brightness = 1.25f; contrast=1.4f }, RGBAdjustFilter(.1f, 0f, .1f)),
+        "boutique" to CompoundFilter(ContrastFilter().apply{ contrast=1.2f }, PoshmarkModernFilter),
+        "luxury" to ContrastFilter().apply{ brightness = 1.1f; contrast=1.1f },
         "activ_k" to CompoundFilter(ContrastFilter().apply{ brightness = .9f; contrast=1.3f }, RGBAdjustFilter(0f, 0f, .6f)),
-        "activ_m" to CompoundFilter(ContrastFilter().apply{ brightness = 1f; contrast=1.2f }, RGBAdjustFilter(0f, .1f, .5f)),
-        "mater_w" to CompoundFilter(HSBAdjustFilter(.05f,0f,0f), CompoundFilter(ContrastFilter().apply{ brightness = 1.1f; contrast=1.2f }, RGBAdjustFilter(-.1f,-.1f,.5f))),
-        "men,petit_w" to CompoundFilter(ContrastFilter().apply{ brightness = .9f; contrast=1.25f }, PoshmarkModernFilter),
+        "luxur_k" to CompoundFilter(ContrastFilter().apply{ brightness = .9f; contrast=1.1f }, RGBAdjustFilter(.1f, .1f, .5f)),
         "kids" to CompoundFilter(ContrastFilter().apply{ brightness = .8f; contrast=1.25f }, PoshmarkModernFilter),
-        "men,women,home_a,luxur_m" to CompoundFilter(ContrastFilter().apply{ brightness = .8f; contrast=1.35f }, PoshmarkModernFilter),
-        "gifts,plus,promd_w" to PoshmarkModernFilter
+        "bouti_m" to ContrastFilter().apply{ brightness = .85f; contrast=1.65f },
+        "luxur_m" to ContrastFilter().apply{ contrast=1.15f },
+        "activ_m" to CompoundFilter(ContrastFilter().apply{ contrast=1.2f }, RGBAdjustFilter(0f, .1f, .5f)),
+        "kicks_m" to CompoundFilter(FlipFilter(FlipFilter.FLIP_H), CompoundFilter(ContrastFilter().apply{ brightness = 1f; contrast=1.1f }, RGBAdjustFilter(0f, 0f, .3f))),
+        "men" to CompoundFilter(ContrastFilter().apply{ brightness = .9f; contrast=1.25f }, PoshmarkModernFilter),
+        "men,women,home_a" to CompoundFilter(ContrastFilter().apply{ brightness = .8f; contrast=1.35f }, PoshmarkModernFilter),
+        "activ_w" to CompoundFilter(ContrastFilter().apply{ contrast=1.3f }, RGBAdjustFilter(0f, 0.1f, .7f)),
+        "makeup" to CompoundFilter(HSBAdjustFilter().apply{ sFactor=.05f }, CompoundFilter(FlipFilter(FlipFilter.FLIP_H), CompoundFilter(ContrastFilter().apply{ brightness = .95f; contrast=1.35f }, RGBAdjustFilter(0f, 0f, .5f)))),
+        "plus" to CompoundFilter(ContrastFilter().apply{ brightness = .95f; contrast=1.2f }, PoshmarkModernFilter),
+        "mater_w" to CompoundFilter(HSBAdjustFilter(.05f,0f,0f), CompoundFilter(ContrastFilter().apply{ brightness = 1.1f; contrast=1.2f }, RGBAdjustFilter(-.1f,-.1f,.5f))),
+        "petit_w" to CompoundFilter(ContrastFilter().apply{ brightness = .9f; contrast=1.35f }, PoshmarkModernFilter),
+        "promd_w" to PoshmarkModernFilter
     )
 }
 //

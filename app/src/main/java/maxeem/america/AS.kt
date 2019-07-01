@@ -63,7 +63,7 @@ class AS : Activity() { //Shortcuts
             bottomMargin = topMargin
         })
         markets.addView(TextView(this).apply {
-            text = getString(R.string.clickOrTap)
+            text = getString(R.string.tap_or_touch)
             alpha = .75f
             gravity = Gravity.CENTER_HORIZONTAL
         }, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
@@ -87,12 +87,12 @@ class AS : Activity() { //Shortcuts
         setOnLongClickListener(this@AS::onLongClick)
     }
     private fun onClick(v: View) = (v.tag as D.Item).let { item->
-        P.go(this, item.action)
+        if (!S.requestPinned(item.id, item.label, item.icon))
+            U.toast(R.string.cant_pin)
         Unit //finish()
     }
     private fun onLongClick(view: View) = (view.tag as D.Item).let { item ->
-        if (!S.requestPinned(item.id, item.label, item.icon))
-            U.toast(R.string.cant_pin)
+        P.go(this, item.action)
         true
     }
 

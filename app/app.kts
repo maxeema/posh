@@ -128,7 +128,6 @@ object ImageUtils {
         }
         //effect
         File(C.ICONS_SRC, "$id-filtered.png").apply {
-            delete()
             iconEffect(id)?.also { effect ->
                 println(" ... applying ${effect.javaClass.simpleName} on $src")
                 src = this
@@ -136,7 +135,7 @@ object ImageUtils {
                     img = this
                     println(" - set 'src' to $src and update 'img' ref. to the filtered one")
                 }, "png", src).takeUnless { it }?.apply { throw Exception("Image write error $url to $src") }
-            }
+            } ?: delete()
         }
         //scale
         C.ICON_SIZES.forEach { dpi, size -> File("${C.ICONS_DST}-$dpi", "${type}_$id.png").apply {

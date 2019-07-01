@@ -30,14 +30,15 @@ object C { //Conf
     val ICONS_EFFECTS =  mapOf(
         "bouti_m" to ContrastFilter().apply{ brightness = .85f; contrast=1.65f },
         "activ_w" to CompoundFilter(ContrastFilter().apply{ brightness = 1f; contrast=1.3f }, RGBAdjustFilter(0f, 0.1f, .7f)),
-        "makeup" to CompoundFilter(FlipFilter(FlipFilter.FLIP_H), CompoundFilter(ContrastFilter().apply{ brightness = .9f; contrast=1.3f }, RGBAdjustFilter(0f, 0f, .4f))),
-        "kicks_m" to CompoundFilter(FlipFilter(FlipFilter.FLIP_H), CompoundFilter(ContrastFilter().apply{ brightness = 1f; contrast=1.1f }, RGBAdjustFilter(0f, 0f, .2f))),
+        "makeup" to CompoundFilter(FlipFilter(FlipFilter.FLIP_H), CompoundFilter(ContrastFilter().apply{ brightness = .9f; contrast=1.4f }, RGBAdjustFilter(0f, 0f, .5f))),
+        "kicks_m" to CompoundFilter(FlipFilter(FlipFilter.FLIP_H), CompoundFilter(ContrastFilter().apply{ brightness = 1f; contrast=1.1f }, RGBAdjustFilter(0f, 0f, .3f))),
         "activ_k" to CompoundFilter(ContrastFilter().apply{ brightness = .9f; contrast=1.3f }, RGBAdjustFilter(0f, 0f, .6f)),
         "activ_m" to CompoundFilter(ContrastFilter().apply{ brightness = 1f; contrast=1.2f }, RGBAdjustFilter(0f, .1f, .5f)),
         "mater_w" to CompoundFilter(HSBAdjustFilter(.05f,0f,0f), CompoundFilter(ContrastFilter().apply{ brightness = 1.1f; contrast=1.2f }, RGBAdjustFilter(-.1f,-.1f,.5f))),
         "men,petit_w" to CompoundFilter(ContrastFilter().apply{ brightness = .9f; contrast=1.25f }, PoshmarkModernFilter),
+        "kids" to CompoundFilter(ContrastFilter().apply{ brightness = .8f; contrast=1.25f }, PoshmarkModernFilter),
         "men,women,home_a,luxur_m" to CompoundFilter(ContrastFilter().apply{ brightness = .8f; contrast=1.35f }, PoshmarkModernFilter),
-        "kids,gifts,plus,promd_w" to PoshmarkModernFilter
+        "gifts,plus,promd_w" to PoshmarkModernFilter
     )
 }
 //

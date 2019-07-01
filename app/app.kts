@@ -15,7 +15,7 @@ import java.nio.charset.Charset
 import java.util.*
 import javax.imageio.ImageIO
 //
-//ImageUtils.testIconEffect("gifts", "department")
+//ImageUtils.testIconEffect("luxur_m", "department")
 //throw InterruptedException()
 //
 object C { //Conf
@@ -35,7 +35,7 @@ object C { //Conf
         "luxur_k" to CompoundFilter(ContrastFilter().apply{ brightness = .9f; contrast=1.1f }, RGBAdjustFilter(.1f, .1f, .5f)),
         "kids" to CompoundFilter(ContrastFilter().apply{ brightness = .8f; contrast=1.25f }, PoshmarkModernFilter),
         "bouti_m" to ContrastFilter().apply{ brightness = .85f; contrast=1.65f },
-        "luxur_m" to ContrastFilter().apply{ contrast=1.15f },
+        "luxur_m" to CompoundFilter(ContrastFilter().apply{ brightness = .95f; contrast=1.1f }, RGBAdjustFilter(0f, 0f, .5f)),
         "activ_m" to CompoundFilter(ContrastFilter().apply{ contrast=1.2f }, RGBAdjustFilter(0f, .1f, .5f)),
         "kicks_m" to CompoundFilter(FlipFilter(FlipFilter.FLIP_H), CompoundFilter(ContrastFilter().apply{ brightness = 1f; contrast=1.1f }, RGBAdjustFilter(0f, 0f, .3f))),
         "men" to CompoundFilter(ContrastFilter().apply{ brightness = .9f; contrast=1.25f }, PoshmarkModernFilter),
@@ -43,7 +43,7 @@ object C { //Conf
         "activ_w" to CompoundFilter(ContrastFilter().apply{ contrast=1.3f }, RGBAdjustFilter(0f, 0.1f, .7f)),
         "makeup" to CompoundFilter(HSBAdjustFilter().apply{ sFactor=.05f }, CompoundFilter(FlipFilter(FlipFilter.FLIP_H), CompoundFilter(ContrastFilter().apply{ brightness = .95f; contrast=1.35f }, RGBAdjustFilter(0f, 0f, .5f)))),
         "plus" to CompoundFilter(ContrastFilter().apply{ brightness = .95f; contrast=1.2f }, PoshmarkModernFilter),
-        "mater_w" to CompoundFilter(HSBAdjustFilter(.05f,0f,0f), CompoundFilter(ContrastFilter().apply{ brightness = 1.1f; contrast=1.2f }, RGBAdjustFilter(-.1f,-.1f,.5f))),
+        "mater_w" to CompoundFilter(HSBAdjustFilter(.05f, 0f, 0f), CompoundFilter(ContrastFilter().apply{ brightness = 1.1f; contrast=1.2f }, RGBAdjustFilter(-.1f,-.1f,.5f))),
         "petit_w" to CompoundFilter(ContrastFilter().apply{ brightness = .9f; contrast=1.35f }, PoshmarkModernFilter),
         "promd_w" to PoshmarkModernFilter
     )

@@ -22,19 +22,24 @@ class AS : Activity() { //Shortcuts
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.`as`)
+        populateHeader()
         populateMarkets()
-        populateTabs()
+        populateFooter()
     }
-
-    private fun populateTabs() {
-        tabs.apply {
+    private fun populateHeader() {
+        header.takeIf { isInMultiWindowMode }?.apply {
+            visibility = View.GONE
+        }
+    }
+    private fun populateFooter() {
+        tabs.takeUnless { isInMultiWindowMode }?.apply {
             D.tabs.forEach { tab-> addView(createChip(tab).apply {
                 chipMinHeight = U.dpToPxf(44)
                 with (U.dpToPxf(20f.let{ if(tab.action=="sell") it.times(1.35f) else it })) {
                     chipStartPadding = this; chipEndPadding = this
                 }
             })}
-        }
+        } ?: apply { footer.visibility = View.GONE }
     }
     private fun populateMarkets() {
         lateinit var chipGroup : ChipGroup

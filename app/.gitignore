@@ -1,6 +1,5 @@
 /build
 /release
-/app.kts.data/icons
 src/main/res/mipmap-*/market*.png
 src/main/res/mipmap-*/department*.png
 

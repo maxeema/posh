@@ -1,28 +1,28 @@
-. ~/.bashrc
+#!/bin/bash
 #
+. ~/.bashrc
 cd _posh
 #
 RES="../src/main/res"
 CP=`ls -m *jar`
+echo "- `pwd`"
 #
-_CLEAR=(
- "icons/*" "experiences.json"
- "$RES/raw/markets.json" "$RES/mipmap-*/{market_,department_}*"
+_CLEAR=("icons/*"
+ "experiences.json" "$RES/raw/markets.json"
+ "$RES/mipmap-*/market_*.png" "$RES/mipmap-*/department_*.png"
 )
 #
 function clear() {
  echo "- clear"
- for i in ${CLEAR[@]}; do echo "  ... $i";
-# rm -rf /tmp/$i;
- done
+ for i in "${_CLEAR[@]}"; do echo "  ... $i"; rm $i; done
+ echo "finished - build"
 }
-
 function build() {
  echo "- build"
  echo "  ... executing app.kts"
- kotlinc -verbose -cp ${CP//[ ,]?/:} -script app.kts
+ kotlinc -cp ${CP//[ ,]?/:} -script app.kts
+ echo "finished - build"
 }
-
 function rebuild() {
   clear
   build

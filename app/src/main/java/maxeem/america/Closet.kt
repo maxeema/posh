@@ -23,16 +23,17 @@ object Closet {
     private const val REGEX = "@?[A-Za-z\\d-_]+"
     private const val MAX_LENGTH = 30
     //
-    fun wanna(a: Activity) {
+    fun wanna(a: Activity, scaleMultiWindowFactor: Float) {
         lateinit var nd : AlertDialog
         lateinit var ed : EditText
-        MaterialAlertDialogBuilder(a)
-        .setTitle(R.string.closet)
+        MaterialAlertDialogBuilder(a).
+        setTitle(if (a.isInMultiWindowMode) null else a.getString(R.string.closet))
         .setView(LinearLayout(a).also { ll ->
             ll.setPadding(U.dpToPxi(30), U.dpToPxi(10), U.dpToPxi(15), U.dpToPxi(5))
             ll.addView(EditText(a).apply {
                 ed = this
                 setText(DEF_CLOSET)
+                scaleMultiWindowFactor.also { scaleY = it; scaleY = it }
                 maxLines = 1
                 inputType = InputType.TYPE_CLASS_TEXT.or(InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS)
                 filters = filters.plusElement(InputFilter.LengthFilter(MAX_LENGTH))

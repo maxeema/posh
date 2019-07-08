@@ -5,22 +5,13 @@
     android:layout_width="match_parent" android:layout_height="match_parent"
     android:paddingHorizontal="10dp" android:paddingVertical="10dp">
     <com.google.android.material.button.MaterialButton android:text="@string/closet"
-        android:id="@+id/closet_fap" android:visibility="gone" android:onClick="addCloset"
+        android:id="@+id/closet_fap" android:onClick="addCloset" android:layout_alignParentEnd="true"
         android:layout_width="wrap_content" android:layout_height="wrap_content"
-        android:layout_marginHorizontal="10dp" android:layout_marginTop="10dp"
-        android:layout_alignParentTop="true" android:layout_alignParentEnd="true"/>
-    <RelativeLayout android:id="@+id/header" android:layout_alignParentTop="true"
-        android:layout_width="match_parent" android:layout_height="wrap_content">
-        <com.google.android.material.button.MaterialButton android:text="@string/closet"
-            android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:layout_marginHorizontal="10dp" android:layout_marginTop="10dp"
-            android:layout_alignParentEnd="true"
-            android:onClick="addCloset"/>
-    </RelativeLayout>
+        android:layout_marginHorizontal="10dp" android:layout_marginTop="10dp" />
     <androidx.core.widget.NestedScrollView
-        android:layout_above="@id/footer" android:layout_below="@id/header"
+        android:layout_above="@id/footer" android:layout_alignParentTop="true"
         android:layout_width="match_parent" android:layout_height="match_parent"
-        android:paddingVertical="10dp" android:fillViewport="true"
+        android:paddingVertical="5dp" android:fillViewport="true"
         android:requiresFadingEdge="vertical" android:fadingEdgeLength="45dp">
         <FrameLayout android:layout_width="match_parent" android:layout_height="wrap_content">
             <LinearLayout android:id="@+id/markets" android:orientation="vertical"

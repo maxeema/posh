@@ -14,7 +14,9 @@ import android.widget.ProgressBar
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat.getSystemService
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import org.jetbrains.anko.dip
 import java.net.URL
+import java.nio.charset.Charset
 
 object Closet {
     //
@@ -23,17 +25,16 @@ object Closet {
     private const val REGEX = "@?[A-Za-z\\d-_]+"
     private const val MAX_LENGTH = 30
     //
-    fun wanna(a: Activity, scaleMultiWindowFactor: Float) {
+    fun wanna(a: Activity) {
         lateinit var nd : AlertDialog
         lateinit var ed : EditText
-        MaterialAlertDialogBuilder(a).
-        setTitle(if (a.isInMultiWindowMode) null else a.getString(R.string.closet))
-        .setView(LinearLayout(a).also { ll ->
-            ll.setPadding(U.dpToPxi(30), U.dpToPxi(10), U.dpToPxi(15), U.dpToPxi(5))
-            ll.addView(EditText(a).apply {
+        MaterialAlertDialogBuilder(a)
+        .setView(LinearLayout(a).apply {
+            dip(10)
+            setPadding(U.dp(30), U.dp(10), U.dp(15), U.dp(5))
+            addView(EditText(a).apply {
                 ed = this
                 setText(DEF_CLOSET)
-                scaleMultiWindowFactor.also { scaleY = it; scaleY = it }
                 maxLines = 1
                 inputType = InputType.TYPE_CLASS_TEXT.or(InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS)
                 filters = filters.plusElement(InputFilter.LengthFilter(MAX_LENGTH))
@@ -79,10 +80,10 @@ object Closet {
                     it.substringBefore(">").substringBefore("\"").substringBefore("'").substringBefore(" ")//extract img.src attribute value
                 }
                 if (BuildConfig.DEBUG)
-                    U.log("$name closet url -> $url")
+                    U.debug("$name closet url -> $url")
                 url
             }
-            d.setOnShowListener { _ ->
+            d.setOnShowListener {
                 task.execute()
             }
         }.show()
@@ -94,9 +95,9 @@ object Closet {
         override fun doInBackground(vararg p0: Unit?): Any {
             return runCatching {
                 Thread.sleep(500)
-                val iconUrl = iconExtract(URL(pageUrl).readText(U.UTF_8))
+                val iconUrl = iconExtract(URL(pageUrl).readText(Charset.forName("UTF-8")))
                 if (BuildConfig.DEBUG)
-                    U.log(" icon url -> $iconUrl")
+                    U.debug(" icon url -> $iconUrl")
                 if (isCancelled) return Unit
                 URL(iconUrl).openStream().use { `in`->
                     S.requestPinned(id, label, Icon.createWithAdaptiveBitmap(BitmapFactory.decodeStream(`in`)))
@@ -106,13 +107,13 @@ object Closet {
         private fun isNotMatter() = isCancelled || !pd.isShowing || a.isFinishing || a.isDestroyed
         override fun onCancelled(result: Any?) {
             if (BuildConfig.DEBUG)
-                U.log(" onCancelled: ${Thread.currentThread()} - isNoMatterMore ${isNotMatter()} \n  result - > $result")
+                U.debug(" onCancelled: ${Thread.currentThread()} - isNoMatterMore ${isNotMatter()} \n  result - > $result")
             if (isNotMatter()) return
             pd.dismiss()
         }
         override fun onPostExecute(result: Any) {
             if (BuildConfig.DEBUG)
-                U.log(" onPostExecute: ${Thread.currentThread()} - isCancelled $isCancelled; status $status; pd.isShowing ${pd.isShowing}; a isFinishing ${a.isFinishing}, isDestroyed ${a.isDestroyed}" +
+                U.debug(" onPostExecute: ${Thread.currentThread()} - isCancelled $isCancelled; status $status; pd.isShowing ${pd.isShowing}; a isFinishing ${a.isFinishing}, isDestroyed ${a.isDestroyed}" +
                     "\n  result - > $result")
             if (isNotMatter()) return
             pd.dismiss()
@@ -128,7 +129,7 @@ object Closet {
                     else -> R.string.smth_wrong to true
                 }.also { val (msg, verbose) = it
                     MaterialAlertDialogBuilder(a)
-                    .setMessage(Html.fromHtml(U.ctx.getString(msg).let {
+                    .setMessage(Html.fromHtml(app.getString(msg).let {
                         if (verbose) {
                             it.plus("<br/><br/><small>[ ${e.javaClass.simpleName} ]").let {
                                 if (e.message.isNullOrBlank()) it else it.plus("<br/>${e.message}")

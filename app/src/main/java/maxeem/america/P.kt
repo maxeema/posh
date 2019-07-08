@@ -16,7 +16,7 @@ object P { //Poshmark
 
     fun go(ctx: Context, action: String) {
         if (BuildConfig.DEBUG)
-            U.log("go $action")
+            U.debug("go $action")
         runCatching {
             action(ctx, action)
             "okay"
@@ -29,12 +29,11 @@ object P { //Poshmark
     }
     private fun action(ctx: Context, action: String) {
         if (BuildConfig.DEBUG)
-            U.log("action: ${deeplink(action)}")
-        Intent(Intent.ACTION_VIEW, deeplink(action)).also {
+            U.debug("action: ${deeplink(action)}")
+        ctx.startActivity(Intent(Intent.ACTION_VIEW, deeplink(action)).also {
             it.`package` = packet
             it.flags = flags
-            ctx.startActivity(it)
-        }
+        })
     }
     private fun install(ctx: Context) {
         Intent(Intent.ACTION_VIEW).apply {

@@ -8,7 +8,7 @@ object D { //Data
 
     open class Item (val id: String, val action: String, val label: String, val icon: Icon) {
         constructor(id: String, action: String, label: String, @DrawableRes icon: Int) :
-                this(id, action, label, Icon.createWithResource(U.ctx, icon))
+                this(id, action, label, Icon.createWithResource(app, icon))
         override fun hashCode() = id.hashCode()
         override fun toString() = id
         override fun equals(other: Any?) = this === other || id == other.let { if (it is Item) it.id else null }
@@ -43,11 +43,11 @@ object D { //Data
     )
 
     val markets = mutableListOf<Market>().apply {
-        App.instance.resources.openRawResource(R.raw.markets).bufferedReader().use {
+        app.resources.openRawResource(R.raw.markets).bufferedReader().use {
             JSONObject(it.readText())
         }.also { j->
             if (BuildConfig.DEBUG)
-                U.log("markets j: $j")
+                U.debug("markets j: $j")
             j.getJSONArray("markets").also { markets->
                 for (i in 0 until markets.length()) markets.getJSONObject(i).also { m->
                     add(Market.Type.M.create(m.getString("id"), m.getString("label")))
@@ -62,7 +62,7 @@ object D { //Data
             }
         }
         if (BuildConfig.DEBUG)
-            U.log("markets: " + this)
+            U.debug("markets: " + this)
     }
 
 }

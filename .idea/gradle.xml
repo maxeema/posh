@@ -7,8 +7,8 @@
         <option name="externalProjectPath" value="$PROJECT_DIR$" />
         <option name="modules">
           <set>
-            <option value="/var/home/max/AndroidStudioProjects/POSH" />
-            <option value="/var/home/max/AndroidStudioProjects/POSH/app" />
+            <option value="/var/home/max/AndroidStudioProjects/posh" />
+            <option value="/var/home/max/AndroidStudioProjects/posh/app" />
           </set>
         </option>
         <option name="resolveModulePerSourceSet" value="false" />

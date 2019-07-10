@@ -14,7 +14,6 @@ import android.widget.ProgressBar
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat.getSystemService
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import org.jetbrains.anko.dip
 import java.net.URL
 import java.nio.charset.Charset
 
@@ -30,7 +29,6 @@ object Closet {
         lateinit var ed : EditText
         MaterialAlertDialogBuilder(a)
         .setView(LinearLayout(a).apply {
-            dip(10)
             setPadding(U.dp(30), U.dp(10), U.dp(15), U.dp(5))
             addView(EditText(a).apply {
                 ed = this
@@ -117,7 +115,7 @@ object Closet {
                     "\n  result - > $result")
             if (isNotMatter()) return
             pd.dismiss()
-            let { result as Result<Boolean> }.onSuccess { wasPinned ->
+            let { @Suppress("UNCHECKED_CAST")(result as Result<Boolean>) }.onSuccess { wasPinned ->
                 if (!wasPinned)
                     U.toast(R.string.cant_pin)
             }.onFailure { e ->

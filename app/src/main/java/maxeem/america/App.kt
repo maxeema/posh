@@ -1,6 +1,7 @@
 package maxeem.america
 
 import android.app.Application
+import android.os.Handler
 
 val app = App.instance
 
@@ -17,6 +18,8 @@ class App : Application() {
     init {
         lazyInstance = { this }
     }
+
+    val handler : Handler by lazy { Handler(mainLooper) }
 
 }
 

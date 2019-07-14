@@ -23,7 +23,7 @@ class AS : Activity() { //Shortcuts
         const val MULTI_WINDOW_VIEW_SCALE_FACTOR = 0.85f
     }
 
-    private val mainHandler = Handler(app.mainLooper)
+    private val mainHandler = app.handler
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

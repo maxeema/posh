@@ -8,12 +8,15 @@ class App : Application() {
 
     companion object {
         const val TAG = "posh"
-        private lateinit var _instance : App
-        val instance get() = _instance
+        private var lazyInstance : (()->App)? = null
+        val instance : App by lazy {
+            lazyInstance!!.also { lazyInstance = null; }()
+        }
     }
 
     init {
-        _instance = this
+        lazyInstance = { this }
     }
 
 }
+

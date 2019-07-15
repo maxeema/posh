@@ -15,13 +15,13 @@ _CLEAR=("icons/*"
 function clear() {
  echo "- clear"
  for i in "${_CLEAR[@]}"; do echo "  ... $i"; rm $i; done
- echo "finished - build"
+ echo "finished - clear"
 }
 function build() {
  echo "- build"
  echo "  ... executing app.kts"
- kotlinc -cp ${CP//[ ,]?/:} -script app.kts
- echo "finished - build"
+ kotlinc -cp ${CP//[ ,]?/:} -script app.kts \
+    && echo "finished - build"
 }
 function rebuild() {
   clear
@@ -30,13 +30,13 @@ function rebuild() {
 #
 if [ ! $1 ]; then
   build
-  exit 0
+  exit $?
 fi
 #
 case $1 in
     clear | build | rebuild )
         eval $1;
-        exit 0;
+        exit $?
     ;;
     * ) echo "usage: #$0 clear | build* | rebuild"
         exit 1

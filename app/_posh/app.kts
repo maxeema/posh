@@ -15,7 +15,7 @@ import java.util.*
 import javax.imageio.ImageIO
 //
 //ImageUtils.testIconEffect("luxur_m", "department")
-//throw InterruptedException()
+//error("Exit after applying test icon effect.")
 //
 object C { //Conf
     val UTF_8 = Charset.forName("UTF-8")
@@ -25,6 +25,7 @@ object C { //Conf
     val MARKETS_JSON = "../src/main/res/raw/markets.json"
     val ICONS_SRC = "icons"
     val ICONS_DST = "../src/main/res/mipmap"
+    val ICON_ORIG_SIZE = 186
     val ICON_SIZES = mapOf("xxxhdpi" to 192, "xxhdpi" to 144, "xhdpi" to 96, "hdpi" to 72, "mdpi" to 48)
     val ICONS_EFFECTS = mapOf(
         "gifts" to CompoundFilter(ContrastFilter().apply{ brightness = 1.25f; contrast=1.4f }, RGBAdjustFilter(.1f, 0f, .1f)),
@@ -35,6 +36,7 @@ object C { //Conf
         "kids" to CompoundFilter(ContrastFilter().apply{ brightness = .8f; contrast=1.25f }, PoshmarkModernFilter),
         "bouti_m" to ContrastFilter().apply{ brightness = .85f; contrast=1.65f },
         "luxur_m" to CompoundFilter(ContrastFilter().apply{ brightness = .95f; contrast=1.1f }, RGBAdjustFilter(0f, 0f, .5f)),
+//"luxur_m" to ResizeCanvasFilter((C.ICON_ORIG_SIZE*1.44f).toInt(), CompoundFilter(ContrastFilter().apply{ brightness = .95f; contrast=1.1f }, RGBAdjustFilter(0f, 0f, .5f))),
         "activ_m" to CompoundFilter(ContrastFilter().apply{ contrast=1.2f }, RGBAdjustFilter(0f, .1f, .5f)),
         "kicks_m" to CompoundFilter(FlipFilter(FlipFilter.FLIP_H), CompoundFilter(ContrastFilter().apply{ brightness = 1f; contrast=1.1f }, RGBAdjustFilter(0f, 0f, .3f))),
         "men" to CompoundFilter(ContrastFilter().apply{ brightness = .9f; contrast=1.25f }, PoshmarkModernFilter),
@@ -114,9 +116,9 @@ object Utils {
 }
 object ImageUtils {
     val iconEffect : (id:String)->AbstractBufferedImageOp? = l@ { id ->
-        for (entry in C.ICONS_EFFECTS.entries)
-            if (entry.key.split(",").contains(id))
-                return@l entry.value
+        for ((items, effect) in C.ICONS_EFFECTS)
+            if (items.split(",").contains(id))
+                return@l effect
         null
     }
     fun pullIcon(id: String, type: String, url: String) {
@@ -129,15 +131,15 @@ object ImageUtils {
         //check
         var img = ImageIO.read(src).apply {
             println(" - orignal size $width x $height")
-            //now Poshmark's icons is 186px which is very close 192px (xxxhdpi), so we use them as xxxhdpi
-            require(width in 186..192 && height in 186..192) { "now, we have to do something with new icon sizes =)" }
+            //now Poshmark's icons is C.ICON_ORIG_SIZE==186px which is very close 192px (xxxhdpi), so we use them as xxxhdpi
+            require(width in C.ICON_ORIG_SIZE..192 && height in C.ICON_ORIG_SIZE..192) { "now, we have to do something with new icon sizes =)" }
         }
         //effect
         File(C.ICONS_SRC, "$id-filtered.png").apply {
             iconEffect(id)?.also { effect ->
                 println(" ... applying ${effect.javaClass.simpleName} on $src")
                 src = this
-                ImageIO.write(effect.filter(img, createDest(img)).apply {
+                ImageIO.write(effect.filter(img, createDest(img, if (effect is CustomSized) effect.customSize else null)).apply {
                     img = this
                     println(" - set 'src' to $src and update 'img' ref. to the filtered one")
                 }, "png", src).takeUnless { it }?.apply { throw Exception("Image write error $url to $src") }
@@ -159,7 +161,7 @@ object ImageUtils {
         val dstCM = ColorModel.getRGBdefault()
         //work with DirectColorModel cuz src's may be IndexedColorModel which causes bad quality filter results
         check(dstCM is DirectColorModel) { "we work with DirectColorModel and don't with $dstCM" }
-        val (width, height) = if (size == null) src.width to src.height else size
+        val (width, height) = size ?: src.width to src.height
         return BufferedImage(dstCM, dstCM.createCompatibleWritableRaster(width, height),
                 dstCM.isAlphaPremultiplied(), null as java.util.Hashtable<*,*>?)
     }
@@ -168,20 +170,38 @@ object ImageUtils {
         check (file.length() > 1) { "empty input file: $file"}
         println("\n - Test icon effect for $id - $type, src: $file")
         ImageIO.write(ImageIO.read(file).run {
-            ImageUtils.iconEffect(id)!!.filter(this, ImageUtils.createDest(this))
+            ImageUtils.iconEffect(id)!!.let { it.filter(this, ImageUtils.createDest(this, if (it is CustomSized) it.customSize else null)) }
         }, "png", File("$id-filtered.png").apply {
             println(" - writing to ${this.absolutePath}")
         }).takeUnless { it }?.apply { throw Exception("Image write error") }
     }
 }
 //
-//
+//@use it first like: ResizeCanvasFilter(432, CompoundFilter(ContrastFilter().apply{ brightness = .95f; contrast=1.1f }, RGBAdjustFilter(0f, 0f, .5f)))
+class ResizeCanvasFilter constructor(override val customSize: Pair<Int, Int>, val next: AbstractBufferedImageOp? = null) : AbstractBufferedImageOp(), CustomSized {
+    constructor(upToSize: Int, next: AbstractBufferedImageOp? = null) : this(upToSize to upToSize, next)
+    override fun filter(src: BufferedImage, dst: BufferedImage?): BufferedImage {
+        val (width,height) = src.width to src.height
+        requireNotNull(dst) { "dst shouldn't be null"}
+        val (upToWidth, upToHeight) = customSize
+        require(width < upToWidth) { "upToWidth ($upToWidth) must be greater source width ($width)" }
+        require(height < upToHeight, fun():String { return "upToHeight ($upToHeight) must be greater source height ($height)"} )
+        val g = dst.createGraphics()
+        g.drawImage(src, (upToWidth-width)/2, (upToHeight-height)/2, width, height, null as ImageObserver?)
+        g.dispose()
+        return next?.filter(dst, dst) ?: dst
+    }
+    override fun toString() = "Resize Canvas"
+}
+interface CustomSized {
+    val customSize : Pair<Int, Int>
+}
 object PoshmarkModernFilter : PoshmarkFilter(Triple(1.0f, 1.0f, 1.4f), Triple(1.0f, 1.0f, 1.2f))
 object PoshmarkChicFilter : PoshmarkFilter(Triple(1.2f, 1.0f, 0.7f), Triple(1.2f, 1.0f, 0.7f))
 object PoshmarkStreetFilter : PoshmarkFilter(adjustArgs=Triple(1.5f, 1.0f, 1.4f))
 object PoshmarkRetroFilter : PoshmarkFilter(Triple(1.4f, 1.3f, 1.0f))
 object PoshmarkVintageFilter: PoshmarkFilter(null, null) {
-    init { TODO("merge and implement") }
+    init { TODO("Not merged and implemented") }
 }
 open class PoshmarkFilter(val balanceArgs: Triple<Float,Float,Float>? = null,
              val adjustArgs:Triple<Float,Float,Float>? = null) : AbstractBufferedImageOp() {

@@ -1,4 +1,4 @@
-package maxeem.america
+package maxeem.america.posh
 
 import android.util.Log
 import android.util.TypedValue
@@ -18,5 +18,12 @@ object U { //Utils
     fun identifier(name:String, type:String) = app.resources.getIdentifier(name, type, app.packageName)
 
     inline fun debug(msg: String)= Log.d(App.TAG, msg)
+
+    fun dump(any: Any) = any.also {
+        println("- dump fields of $it")
+        for (field in it.javaClass.declaredFields) { with(field) {
+            println( "$name = ${get(it)}")
+        }}
+    }
 
 }

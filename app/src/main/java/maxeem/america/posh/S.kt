@@ -1,4 +1,4 @@
-package maxeem.america
+package maxeem.america.posh
 
 import android.app.PendingIntent
 import android.content.ComponentName

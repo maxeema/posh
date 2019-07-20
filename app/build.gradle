@@ -6,7 +6,7 @@ android {
     compileSdkVersion 29
     defaultConfig {
         resConfigs "en"
-        applicationId "maxeem.america"
+        applicationId "maxeem.america.posh"
         minSdkVersion 26
         targetSdkVersion 29
         versionCode 10
@@ -18,18 +18,17 @@ android {
             minifyEnabled true
             shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-            applicationIdSuffix = 'posh'
             versionNameSuffix = '-Maxeem'
         }
         debug {
-            minifyEnabled true
+            minifyEnabled false
             useProguard false
             applicationIdSuffix = 'debug'
             versionNameSuffix = '-debug'
         }
     }
     compileOptions { }
-    buildToolsVersion = '29.0.0 rc3'
+    buildToolsVersion = '29.0.1'
 }
 
 dependencies {
@@ -38,6 +37,7 @@ dependencies {
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.1.1'
     implementation "com.google.android.material:material:$material_version"
     implementation 'androidx.core:core-ktx:1.0.2'
     implementation "org.jetbrains.anko:anko-commons:$anko_version"

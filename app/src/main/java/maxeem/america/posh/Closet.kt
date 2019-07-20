@@ -1,8 +1,10 @@
-package maxeem.america
+package maxeem.america.posh
 
 import android.app.Activity
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Color
+import android.graphics.Paint
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Icon
 import android.os.AsyncTask
@@ -13,9 +15,11 @@ import android.widget.LinearLayout
 import android.widget.ProgressBar
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat.getSystemService
+import androidx.core.graphics.applyCanvas
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import java.net.URL
 import java.nio.charset.Charset
+import kotlin.math.max
 
 object Closet {
     //
@@ -44,13 +48,13 @@ object Closet {
                     }
                 })
             }, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT))
-        }).setPositiveButton(R.string.add) { d, v->
+        }).setPositiveButton(R.string.add) { _, _ ->
             getSystemService(a, InputMethodManager::class.java)
                 ?.hideSoftInputFromWindow(ed.windowToken, 0)
             add(a, nd, correct(ed.text.toString().trim()))
         }.create().apply {
             nd = this
-            setOnShowListener { d->
+            setOnShowListener {
                 ed.requestFocus()
                 Selection.setSelection(ed.text, ed.length())
             }
@@ -74,7 +78,7 @@ object Closet {
         .create().also { d ->
             d.setCanceledOnTouchOutside(false)
             task = PinTask(a, nd, d,"closet_$name", "@$name", "$URL/$name") { html->
-                var url = html.substring(html.indexOf("http", html.indexOf("user-image-con", ignoreCase = true), true)).let {
+                val url = html.substring(html.indexOf("http", html.indexOf("user-image-con", ignoreCase = true), true)).let {
                     it.substringBefore(">").substringBefore("\"").substringBefore("'").substringBefore(" ")//extract img.src attribute value
                 }
                 if (BuildConfig.DEBUG)
@@ -86,22 +90,31 @@ object Closet {
             }
         }.show()
     }
-
     private class PinTask(val a: Activity, val nd: AlertDialog, val pd: AlertDialog,
           val id:String, val label:String, val pageUrl:String, val iconExtract: (html:String)->String)
                 : AsyncTask<Unit, Unit, Any>() {
-        override fun doInBackground(vararg p0: Unit?): Any {
-            return runCatching {
-                Thread.sleep(500)
-                val iconUrl = iconExtract(URL(pageUrl).readText(Charset.forName("UTF-8")))
+        override fun doInBackground(vararg p0: Unit?) = runCatching {
+            Thread.sleep(500)
+            val iconUrl = iconExtract(URL(pageUrl).readText(Charset.forName("UTF-8")))
+            if (BuildConfig.DEBUG)
+                U.debug(" icon url -> $iconUrl")
+            if (isCancelled) return@runCatching Unit
+            URL(iconUrl).openStream().use { `in`->
+                val opts = BitmapFactory.Options()
+                //now orig icon size is 300x300 px, but we don't worry, just add padding
+                val b1 = BitmapFactory.decodeStream(`in`, null, opts)!!
                 if (BuildConfig.DEBUG)
-                    U.debug(" icon url -> $iconUrl")
-                if (isCancelled) return Unit
-                URL(iconUrl).openStream().use { `in`->
-                    S.requestPinned(id, label, Icon.createWithAdaptiveBitmap(BitmapFactory.decodeStream(`in`)))
+                    U.dump(opts)
+                val origSize = max(opts.outWidth, opts.outHeight)
+                //apply padding
+                val padSize = origSize * 1.44f
+                val b2 = Bitmap.createBitmap(padSize.toInt(), padSize.toInt(), opts.outConfig)
+                b2.applyCanvas {
+                    drawBitmap(b1, (padSize-origSize)/2, (padSize-origSize)/2, Paint())
                 }
+                S.requestPinned(id, label, Icon.createWithAdaptiveBitmap(b2))
             }
-        }
+        } as Any
         private fun isNotMatter() = isCancelled || !pd.isShowing || a.isFinishing || a.isDestroyed
         override fun onCancelled(result: Any?) {
             if (BuildConfig.DEBUG)

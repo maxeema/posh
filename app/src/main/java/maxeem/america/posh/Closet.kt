@@ -27,6 +27,7 @@ object Closet {
     private const val DEF_CLOSET = "@jaw_breaker"
     private const val REGEX = "@?[A-Za-z\\d-_]+"
     private const val MAX_LENGTH = 30
+    private const val IMG_PADDING = 1.44f
     //
     fun wanna(a: Activity) {
         lateinit var nd : AlertDialog
@@ -107,7 +108,7 @@ object Closet {
                     U.dump(opts)
                 val origSize = max(opts.outWidth, opts.outHeight)
                 //apply padding
-                val padSize = origSize * 1.44f
+                val padSize = origSize * IMG_PADDING
                 val b2 = Bitmap.createBitmap(padSize.toInt(), padSize.toInt(), opts.outConfig)
                 b2.applyCanvas {
                     drawBitmap(b1, (padSize-origSize)/2, (padSize-origSize)/2, Paint())

@@ -7,15 +7,16 @@ import android.content.pm.ShortcutInfo
 import android.content.pm.ShortcutManager
 import android.graphics.drawable.Icon
 import android.net.Uri
+import androidx.core.content.getSystemService
 
 object S { //Shortcuts
 
-    fun requestPinned(id: String, label: String, icon: Icon) = app.getSystemService(ShortcutManager::class.java).run {
+    fun requestPinned(id: String, label: String, icon: Icon) = app.getSystemService<ShortcutManager>()?.run {
         create(id, label, icon).let {
             val pi = PendingIntent.getBroadcast(app, 0, createShortcutResultIntent(it), 0)
             requestPinShortcut(it, pi.intentSender)
         }
-    }
+    } ?: false
 
     private fun create(id: String, label: String, icon: Icon) = ShortcutInfo.Builder(app, id).run {
         setIcon(icon).setShortLabel(label).setLongLabel(label)

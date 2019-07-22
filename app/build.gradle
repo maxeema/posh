@@ -25,6 +25,10 @@ android {
             useProguard false
             applicationIdSuffix = 'debug'
             versionNameSuffix = '-debug'
+            dependencies {
+                //use it for _posh/app.kts whilst working with images filters
+//                implementation files('_posh/com.jhlabs-filters-2.0.235.jar')
+            }
         }
     }
     compileOptions { }

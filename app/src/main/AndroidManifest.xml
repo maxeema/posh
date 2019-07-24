@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     package="maxeem.america.posh">
     <uses-permission android:name="android.permission.INTERNET"/>
     <application
@@ -9,7 +10,8 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
-        android:name=".App">
+        android:name=".App"
+        tools:ignore="GoogleAppIndexingWarning">
         <activity android:name=".AS" android:label="@string/shortcuts" android:screenOrientation="portrait"
             android:configChanges="screenSize|smallestScreenSize|orientation|screenLayout">
             <intent-filter>

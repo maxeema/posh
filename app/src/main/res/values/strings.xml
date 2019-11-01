@@ -1,10 +1,9 @@
 <resources>
     <string name="maxeem">Maxeem America</string>
-    <string name="app_name">POSH</string>
+    <string name="app_name">Shortcuts</string>
     <string name="action">Action</string>
     <string name="install_first">"Install the <b>Poshmark</b> app first</string>
-    <string name="shortcuts">Shortcuts</string>
-    <string name="title">Poshmark app Shortcuts</string>
+    <string name="app_title">Shortcuts</string>
     <string name="tap_or_touch">Tap to create shortcut | Touch &amp; hold to open</string>
     <string name="cant_pin">Sorry, your device conf. isn\'t supported</string>
     <string name="closet">+ Closet</string>

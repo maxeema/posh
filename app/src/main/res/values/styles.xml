@@ -3,6 +3,7 @@
     <!-- Base application theme. -->
     <style name="AppTheme" parent="Theme.MaterialComponents">
         <!-- Customize your theme here. -->
+<!--        <item name="android:windowFullscreen">true</item>-->
     </style>
 
 </resources>

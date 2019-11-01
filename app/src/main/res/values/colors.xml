@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="ic_launcher_background">#ffffff</color>
-    <color name="ic_shortcut">#ad4a51</color>
+    <color name="ic_launcher_background_start">#9575CD</color>
+    <color name="ic_launcher_background_end">#512DA8</color>
+    <color name="ic_shortcut">#9575CD</color>
 </resources>

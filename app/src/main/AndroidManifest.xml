@@ -12,7 +12,7 @@
         android:theme="@style/AppTheme"
         android:name=".App"
         tools:ignore="GoogleAppIndexingWarning">
-        <activity android:name=".AS" android:label="@string/shortcuts" android:screenOrientation="portrait"
+        <activity android:name=".AS" android:label="@string/app_title" android:screenOrientation="portrait"
             android:configChanges="screenSize|smallestScreenSize|orientation|screenLayout">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

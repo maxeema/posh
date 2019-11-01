@@ -4,12 +4,13 @@
 cd _posh
 #
 RES="../src/main/res"
-CP=`ls -m *jar`
-echo "- `pwd`"
+CP=$(ls -m *jar)
+echo "- $(pwd)"
 #
 _CLEAR=("icons/*"
  "experiences.json" "$RES/raw/markets.json"
  "$RES/mipmap-*/market_*.png" "$RES/mipmap-*/department_*.png"
+ "$RES/raw/market_*.png" "$RES/raw/department_*.png" 
 )
 #
 function clear() {
@@ -20,7 +21,8 @@ function clear() {
 function build() {
  echo "- build"
  echo "  ... executing app.kts"
- kotlinc -cp ${CP//[ ,]?/:} -script app.kts \
+ echo "  ..... classpath ${CP//[ ,]?/:}"
+ kotlinc -cp "${CP//[ ,]?/:}" -script app.kts \
     && echo "finished - build"
 }
 function rebuild() {
@@ -28,14 +30,14 @@ function rebuild() {
   build
 }
 #
-if [ ! $1 ]; then
+if [ ! "$1" ]; then
   build
   exit $?
 fi
 #
 case $1 in
     clear | build | rebuild )
-        eval $1;
+        eval "$1";
         exit $?
     ;;
     * ) echo "usage: #$0 clear | build* | rebuild"

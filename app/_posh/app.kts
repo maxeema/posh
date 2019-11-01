@@ -1,12 +1,13 @@
 //
 //
-//https://www.baeldung.com/guide-to-jayway-jsonpath
-//
 //
 import com.jayway.jsonpath.JsonPath
 import com.jhlabs.image.*
 import net.minidev.json.*
 import net.minidev.json.parser.JSONParser
+import java.awt.Color
+import java.awt.Dimension
+import java.awt.Rectangle
 import java.awt.image.*
 import java.io.File
 import java.net.URL
@@ -14,18 +15,21 @@ import java.nio.charset.Charset
 import java.util.*
 import javax.imageio.ImageIO
 //
-//ImageUtils.testIconEffect("luxur_m", "department")
-//error("Exit after applying test icon effect.")
+//ImageUtils.testIconEffect("bath_h", "department").apply {
+//    error("Exit after applying test icon effect.")
+//}
 //
 object C { //Conf
     val UTF_8 = Charset.forName("UTF-8")
-    val EXPERIENCES_URL = "https://poshmark.com/api/meta/experiences"
+    val EXPERIENCES_URL  = "https://poshmark.com/api/meta/experiences"
     val EXPERIENCES_JSON = "experiences.json"
-    val MARKETS_ORDER = "home_a,kids,all,men,women".split(",")
-    val MARKETS_JSON = "../src/main/res/raw/markets.json"
-    val ICONS_SRC = "icons"
-    val ICONS_DST = "../src/main/res/mipmap"
-    val ICON_ORIG_SIZE = 186
+    val MARKETS_ORDER    = "man,kids,home_a,all,women".split(",")
+    val MARKETS_JSON     = "../src/main/res/raw/markets.json"
+    val ICONS_SRC        = "icons"
+    val ICONS_DST        = "../src/main/res/mipmap"
+    val ICON_ORIG_SIZE   = 168
+    val RAW_ICON_SIZE    = 300
+    val ICONS_RAW_DST    = "../src/main/res/raw"
     val ICON_SIZES = mapOf("xxxhdpi" to 192, "xxhdpi" to 144, "xhdpi" to 96, "hdpi" to 72, "mdpi" to 48)
     val ICONS_EFFECTS = mapOf(
         "gifts" to CompoundFilter(ContrastFilter().apply{ brightness = 1.25f; contrast=1.4f }, RGBAdjustFilter(.1f, 0f, .1f)),
@@ -36,7 +40,6 @@ object C { //Conf
         "kids" to CompoundFilter(ContrastFilter().apply{ brightness = .8f; contrast=1.25f }, PoshmarkModernFilter),
         "bouti_m" to ContrastFilter().apply{ brightness = .85f; contrast=1.65f },
         "luxur_m" to CompoundFilter(ContrastFilter().apply{ brightness = .95f; contrast=1.1f }, RGBAdjustFilter(0f, 0f, .5f)),
-//"luxur_m" to ResizeCanvasFilter((C.ICON_ORIG_SIZE*1.44f).toInt(), CompoundFilter(ContrastFilter().apply{ brightness = .95f; contrast=1.1f }, RGBAdjustFilter(0f, 0f, .5f))),
         "activ_m" to CompoundFilter(ContrastFilter().apply{ contrast=1.2f }, RGBAdjustFilter(0f, .1f, .5f)),
         "kicks_m" to CompoundFilter(FlipFilter(FlipFilter.FLIP_H), CompoundFilter(ContrastFilter().apply{ brightness = 1f; contrast=1.1f }, RGBAdjustFilter(0f, 0f, .3f))),
         "men" to CompoundFilter(ContrastFilter().apply{ brightness = .9f; contrast=1.25f }, PoshmarkModernFilter),
@@ -46,7 +49,19 @@ object C { //Conf
         "plus" to CompoundFilter(ContrastFilter().apply{ brightness = .95f; contrast=1.2f }, PoshmarkModernFilter),
         "mater_w" to CompoundFilter(HSBAdjustFilter(.05f, 0f, 0f), CompoundFilter(ContrastFilter().apply{ brightness = 1.1f; contrast=1.2f }, RGBAdjustFilter(-.1f,-.1f,.5f))),
         "petit_w" to CompoundFilter(ContrastFilter().apply{ brightness = .9f; contrast=1.35f }, PoshmarkModernFilter),
-        "promd_w" to PoshmarkModernFilter
+        "finew_m" to CompoundFilter(ContrastFilter().apply{ brightness = 1f; contrast=1.2f }, RGBAdjustFilter(0f, 0f, .2f)),
+        "promd_w" to PoshmarkModernFilter,
+        "dining_h" to CompoundFilter(ContrastFilter().apply{ brightness = 1f; contrast=1.4f }, RGBAdjustFilter(.1f, 0f, .1f)),
+        "living_h" to CompoundFilter(ContrastFilter().apply{ contrast=1.2f }, PoshmarkModernFilter),
+        "luxac_m" to PoshmarkModernFilter,
+        "kicks_w" to CompoundFilter(FlipFilter(FlipFilter.FLIP_H), CompoundFilter(ContrastFilter().apply{ brightness = 1f; contrast=1.1f }, RGBAdjustFilter(0f, 0f, .3f))),
+        "kicks_k" to CompoundFilter(ContrastFilter().apply{ brightness = 1f; contrast=1.1f }, RGBAdjustFilter(0f, 0f, .3f)),
+        "office_h" to ContrastFilter().apply{ brightness = 1f; contrast=1.2f },
+        "bedrm_h" to ContrastFilter().apply{ brightness = .9f; contrast=1.3f },
+        "bath_h" to CompoundFilter(ContrastFilter().apply{ brightness = .95f; contrast=1.3f }, RGBAdjustFilter(0f, 0f, .2f)),
+        "kitch_h" to CompoundFilter(ContrastFilter().apply{ brightness = 1f; contrast=1.1f }, RGBAdjustFilter(0f, 0f, .1f)),
+        "seasnl_h" to CompoundFilter(ContrastFilter().apply{ brightness = .9f; contrast=1.1f }, RGBAdjustFilter(.1f, .1f, .5f)),
+        "school_h" to CompoundFilter(ContrastFilter().apply{ brightness = .95f; contrast=1.1f }, RGBAdjustFilter(0f, 0f, .1f))
     )
 }
 //
@@ -131,8 +146,8 @@ object ImageUtils {
         //check
         var img = ImageIO.read(src).apply {
             println(" - orignal size $width x $height")
-            //now Poshmark's icons is C.ICON_ORIG_SIZE==186px which is very close 192px (xxxhdpi), so we use them as xxxhdpi
-            require(width in C.ICON_ORIG_SIZE..192 && height in C.ICON_ORIG_SIZE..192) { "now, we have to do something with new icon sizes =)" }
+            //now Poshmark's icons is 166px, so, the build script knows how to work with it
+            require(width == C.ICON_ORIG_SIZE && height ==C.ICON_ORIG_SIZE) { "now, we have to do something with new icon sizes =)" }
         }
         //effect
         File(C.ICONS_SRC, "$id-filtered.png").apply {
@@ -145,17 +160,28 @@ object ImageUtils {
                 }, "png", src).takeUnless { it }?.apply { throw Exception("Image write error $url to $src") }
             } ?: delete()
         }
-        //scale
+        //scale for chips
         C.ICON_SIZES.forEach { dpi, size -> File("${C.ICONS_DST}-$dpi", "${type}_$id.png").apply {
-            if ("xxxhdpi" == dpi) {
-                println(" ... copying $src to $this")
-                src.copyTo(this, true)
-            } else {
-                println(" ... scaling $dpi, $size $this")
-                ImageIO.write(BicubicScaleFilter(size, size).filter(img, createDest(img, size to size)), "png", this)
+            println(" ... scaling $dpi, $size $this")
+            var filter : BufferedImageOp = BicubicScaleFilter(size, size);
+//            if ("xxxhdpi" == dpi) {
+//                println(" ... copying $src to $this")
+//                src.copyTo(this, true)
+//            }
+            if ("xxxhdpi" == dpi)
+                filter = ChainFilter(filter, RepeatFilter(2, SharpenFilter()));
+            println(" ... filtering with $filter")
+            ImageIO.write(filter.filter(img, createDest(img, size to size)), "png", this)
                     .takeUnless { it }?.apply { throw Exception("Image write error $this") }
-            }
         }}
+        //up scale for Adaptive Icon
+        File("${C.ICONS_RAW_DST}", "${type}_$id.png").apply {
+            val size = C.RAW_ICON_SIZE
+            val filter = ChainFilter(BicubicScaleFilter(size, size), RepeatFilter(2, SharpenFilter()))
+            println(" ... upscaling , $this")
+            ImageIO.write(filter.filter(img, createDest(img, size to size)), "png", this)
+                    .takeUnless { it }?.apply { throw Exception("Image write error $this") }
+        }
     }
     fun createDest(src: BufferedImage, size:Pair<Int, Int>? = null) : BufferedImage {
         val dstCM = ColorModel.getRGBdefault()
@@ -177,9 +203,31 @@ object ImageUtils {
     }
 }
 //
-//@use it first like: ResizeCanvasFilter(432, CompoundFilter(ContrastFilter().apply{ brightness = .95f; contrast=1.1f }, RGBAdjustFilter(0f, 0f, .5f)))
-class ResizeCanvasFilter constructor(override val customSize: Pair<Int, Int>, val next: AbstractBufferedImageOp? = null) : AbstractBufferedImageOp(), CustomSized {
-    constructor(upToSize: Int, next: AbstractBufferedImageOp? = null) : this(upToSize to upToSize, next)
+class RepeatFilter constructor(private val times: Int, private val filter: BufferedImageOp) : AbstractBufferedImageOp() {
+    override fun filter(src: BufferedImage, dst: BufferedImage?): BufferedImage {
+        var img = src
+        repeat (times) {
+            img = filter.filter(img, dst)
+        }
+        return img
+    }
+    override fun toString() = "Repeat"
+}
+class ChainFilter(vararg args: BufferedImageOp) : AbstractBufferedImageOp() {
+    private val filters = args.toList()
+    override fun filter(src: BufferedImage, dst: BufferedImage?): BufferedImage {
+        var img = src
+        for (filter in filters)
+            img = filter.filter(img, dst)
+        return img
+    }
+    override fun toString() = "Repeat"
+}
+class ResizeCanvasFilter(override val customSize: Pair<Int, Int>,
+                         val next: AbstractBufferedImageOp? = null,
+                         val bgColor : Color? = null) : AbstractBufferedImageOp(), CustomSized {
+    constructor(upToSize: Int, next: AbstractBufferedImageOp? = null,
+                bgColor : Color? = null) : this(upToSize to upToSize, next, bgColor)
     override fun filter(src: BufferedImage, dst: BufferedImage?): BufferedImage {
         val (width,height) = src.width to src.height
         requireNotNull(dst) { "dst shouldn't be null"}
@@ -187,6 +235,10 @@ class ResizeCanvasFilter constructor(override val customSize: Pair<Int, Int>, va
         require(width < upToWidth) { "upToWidth ($upToWidth) must be greater source width ($width)" }
         require(height < upToHeight, fun():String { return "upToHeight ($upToHeight) must be greater source height ($height)"} )
         val g = dst.createGraphics()
+        if (bgColor != null) {
+            g.color = bgColor
+            g.fill(Rectangle(Dimension(upToWidth, upToHeight)))
+        }
         g.drawImage(src, (upToWidth-width)/2, (upToHeight-height)/2, width, height, null as ImageObserver?)
         g.dispose()
         return next?.filter(dst, dst) ?: dst
@@ -194,13 +246,13 @@ class ResizeCanvasFilter constructor(override val customSize: Pair<Int, Int>, va
     override fun toString() = "Resize Canvas"
 }
 interface CustomSized {
-    val customSize : Pair<Int, Int>
+    val customSize: Pair<Int, Int>
 }
-object PoshmarkModernFilter : PoshmarkFilter(Triple(1.0f, 1.0f, 1.4f), Triple(1.0f, 1.0f, 1.2f))
-object PoshmarkChicFilter : PoshmarkFilter(Triple(1.2f, 1.0f, 0.7f), Triple(1.2f, 1.0f, 0.7f))
-object PoshmarkStreetFilter : PoshmarkFilter(adjustArgs=Triple(1.5f, 1.0f, 1.4f))
-object PoshmarkRetroFilter : PoshmarkFilter(Triple(1.4f, 1.3f, 1.0f))
-object PoshmarkVintageFilter: PoshmarkFilter(null, null) {
+object PoshmarkModernFilter  : PoshmarkFilter(Triple(1.0f, 1.0f, 1.4f), Triple(1.0f, 1.0f, 1.2f))
+object PoshmarkChicFilter    : PoshmarkFilter(Triple(1.2f, 1.0f, 0.7f), Triple(1.2f, 1.0f, 0.7f))
+object PoshmarkStreetFilter  : PoshmarkFilter(adjustArgs=Triple(1.5f, 1.0f, 1.4f))
+object PoshmarkRetroFilter   : PoshmarkFilter(Triple(1.4f, 1.3f, 1.0f))
+object PoshmarkVintageFilter : PoshmarkFilter(null, null) {
     init { TODO("Not merged and implemented") }
 }
 open class PoshmarkFilter(val balanceArgs: Triple<Float,Float,Float>? = null,
